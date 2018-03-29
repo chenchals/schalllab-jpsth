@@ -46,12 +46,12 @@ for g = 3:3 %numel(groups)
     % use these Ids...
     switch selGroup
         case 'unitIds'
-          idsToUse = unitIds;
+          idsToUse = cellIdsTable.unitIds;
           prefix = 'Unit Id #';
           pltRows = 5;
           pltCols = 6;
         case 'channelUnits'
-          idsToUse = channelNos;
+          idsToUse = unique(cellIdsTable.channelNo);
           prefix = 'Channel #'; 
           pltRows = 3;
           pltCols = 6;

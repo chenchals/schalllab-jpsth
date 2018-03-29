@@ -51,9 +51,9 @@ Tol=1e-300;
 % add increments of 1e-6 msecs to spikes that are simultaneous
 % ex. spktimes [200 200 200 201 203] ==> 
 % after jitter = [200 200.000001 200.000002 201 203]
-jitterForSimultaneousSpikes = 1e-300;
-InTrain = jitterDuplicateTimestamps(inputTrain,jitterForSimultaneousSpikes);
-
+jitterForSimultaneousSpikes = 1e-20;
+%jitterTimes = 0;
+[InTrain, jitterTimes] = jitterDuplicateTimestamps(inputTrain,jitterForSimultaneousSpikes);
 %****************Spike Train Properties*****************
 if(size(InTrain,1))>1
     InTrain=InTrain';
@@ -68,17 +68,21 @@ if inStartT > inStopT
 end
 % Ensure start and stop times are not negative
 % Offset window time if negative
-offsetSpkTime = 0;
-if inStartT < 0
-    offsetSpkTime = abs(inStartT);
-end
-StartT = inStartT + offsetSpkTime;
-StopT = inStopT + offsetSpkTime;
+%offsetSpkTime = 0;
+% if inStartT < 0
+%     offsetSpkTime = abs(inStartT);
+% end
+offsetSpkTime = min(min(InTrain),min(inStartT));
+
+StartT = inStartT - offsetSpkTime;
+StopT = inStopT - offsetSpkTime;
 % Add offestSpkTime to InTrain, such that 0 corresponds to StartT
-SPT = InTrain + offsetSpkTime;
+SPT = InTrain - offsetSpkTime;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Use spike times >0
-SPT=SPT(SPT > 0 & SPT < Inf)';
+% Use spike times >
+jitterTimes(SPT ==0 | SPT == Inf)=[];
+SPT=SPT(SPT >0 & SPT < Inf)';
+
 StopT=max(0,StopT);%traps NaN
 StartT=max(0,StartT);%traps NaN
 % if(~StopT),StopT=max(SPT);end
@@ -116,6 +120,7 @@ else
 end
 MaxSpikes=length(SPT);
 ISI=diff(SPT);%Inter Spike Intervals
+ISI = ISI + Tol;
 %################Parameter Initializations##############
 %******Flags, Counters, Indices and Rel. OPs************
 ISBURST=0;
@@ -185,8 +190,18 @@ while(FspAB <= MaxSpikes-1 || ~Done)
         
         %***************FIND BOB****************************
         ToI=FspAB;
+        fprintf('ToI: \n')
+        disp(ToI)
+        fprintf('CurrEOB: \n')
+        disp(CurrEOB)
+
         BSPT=SPT(CurrEOB:-1:ToI);
+        fprintf('BSPT: \n')
+        disp(BSPT)
+
         cISI=cumsum(abs(diff(BSPT)))+Anchor;
+        fprintf('cISI: \n')
+        disp(cISI)
         Prob=poisscdf([1:length(cISI)]',cISI.*MU)+Tol;
         Prob=(1-Prob);
         SI=-log(Prob);
@@ -263,7 +278,7 @@ while(FspAB <= MaxSpikes-1 || ~Done)
     end
 end%while(FspAB <= MaxSpikes-1)
 % Subtract offsetSpkTime to get back original times for SPT
-SPT = SPT - offsetSpkTime;
+SPT = SPT + offsetSpkTime - jitterTimes;
 BOBT = SPT(BOB)';
 EOBT = SPT(EOB)';
 
@@ -365,34 +380,11 @@ oStruct = cleanOutput(true);
     end
 end
 
-function [oTrain] = jitterDuplicateTimestamps(inTrain, jitter)
-  oTrain = inTrain + randperm(length(inTrain))'*jitter;
-  oTrain = sort(oTrain);
+function [oTrain, jitterTimes] = jitterDuplicateTimestamps(inTrain, jitter)
+  jitterTimes = randperm(length(inTrain))'*jitter;
+  oTrain = sort(inTrain + jitterTimes);
 end
 
-% It is not necessary to add offsets to only the duplicates
-function [oTrain] = jitterDuplicateTimestamps2(inTrain, jitter)
-    if(numel(inTrain) == 0)
-        oTrain = inTrain;
-        return;
-    end
-    oTrain = zeros(numel(inTrain),1);
-    dupCount = 1;
-    i = 1;
-    prevVal = inTrain(i);
-    while i<=numel(inTrain)
-        currVal = inTrain(i);
-        if prevVal == currVal
-            oTrain(i) = prevVal + dupCount * jitter;
-            dupCount = dupCount +1;
-        else
-            dupCount = 1;
-            oTrain(i) = currVal;
-            prevVal = currVal;
-        end
-        i = i+1;
-    end
-end
 
 % Call for SpikeTimes.saccade
 % allCells = arrayfun(@(c) SpikeTimes.saccade(:,c),1:29,'UniformOutput',false);
