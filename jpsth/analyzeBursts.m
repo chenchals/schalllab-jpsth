@@ -1,16 +1,8 @@
-function [ results ] = analysis()
+function [ results ] = analyzeBursts()
 %%%%%%%%%%%%%%%%%%% User parameters Area %%%%%%%%%%%%%%%%%%%%%%%%
-timeWin = [-200 400];
+timeWin = [-1000 1500];
 fileToLoad = '/Users/subravcr/Projects/lab-schall/schalllab-jpsth/data/spikeTimes_saccAligned_sess14.mat';
 conditionsFile = '/Users/subravcr/Projects/lab-schall/schalllab-jpsth/data/ttx.mat';
-load(fileToLoad);
-[~,datafile,ext] = fileparts(fileToLoad);
-datafile = [datafile ext];
-origSpkTimes = SpikeTimes.saccade;
-% Conditions to select trials
-load(conditionsFile);
-[ ~, sessionConditionFile, ext] = fileparts(conditionsFile);
-sessionConditionFile = [sessionConditionFile ext];
 session = 14;
 condition = 'GO';
 trials = ttx.(condition){session};
@@ -23,24 +15,22 @@ unitChannelIds = [1, 2, 3, 4, 4, 5, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 9, 10, 10, 11,
 % 1, 2, 3, 4, 4, 5, 5, 5, 6, 6, 7, 7, 8, 8, ||||||| 9, 9, 9, 10, 10, 11, 12, 13, 14, 14, 14, 15, 17, 18, 19
 %
 
+
+load(fileToLoad);
+[~,datafile,ext] = fileparts(fileToLoad);
+datafile = [datafile ext];
+origSpkTimes = SpikeTimes.saccade;
+% Conditions to select trials
+load(conditionsFile);
+[ ~, sessionConditionFile, ext] = fileparts(conditionsFile);
+sessionConditionFile = [sessionConditionFile ext];
+
+
 cellIdsTable = table();
 cellIdsTable.unitIds = unitIds';
 cellIdsTable.channelNo = unitChannelIds';
 cellIdsTable.upperLayer = (unitChannelIds<=8)';
 cellIdsTable.lowerLayer = (unitChannelIds>8)';
-% Create groups for analysis
-units = arrayfun(@(x) {x},cellIdsTable.unitIds);
-% group cell Ids by channel
-channelUnits = arrayfun(@(x) find(cellIdsTable.channelNo==x),...
-    unique(cellIdsTable.channelNo),'UniformOutput',false);
-% Upper layer units
-upperLayerUnits = arrayfun(@(x) find(cellIdsTable.channelNo==x),...
-    unique(cellIdsTable.channelNo(cellIdsTable.upperLayer)),'UniformOutput',false);
-% Lower layer units
-lowerLayerUnits = arrayfun(@(x) find(cellIdsTable.channelNo==x),...
-    unique(cellIdsTable.channelNo(cellIdsTable.lowerLayer)),'UniformOutput',false);
-
-layerUnits = {vertcat(upperLayerUnits{:}); vertcat(lowerLayerUnits{:})};
 
 groups = {'units', 'channelUnits', 'layerUnits'};
 
@@ -118,6 +108,7 @@ for g = 1:3 %numel(groups)
     
     results(g).analysisTime = datetime;
     results(g).datafile = datafile;
+    results(g).sessionConditionFile = sessionConditionFile;
     results(g).session = session;
     results(g).condition = condition;
     results(g).analysisPrefix = analysisType;
