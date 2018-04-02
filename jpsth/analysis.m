@@ -1,4 +1,4 @@
-
+function [ results ] = analysis()
 %%%%%%%%%%%%%%%%%%% User parameters Area %%%%%%%%%%%%%%%%%%%%%%%%
 timeWin = [-200 400];
 fileToLoad = '/Users/subravcr/Projects/lab-schall/schalllab-jpsth/data/spikeTimes_saccAligned_sess14.mat';
@@ -129,6 +129,8 @@ for g = 1:3 %numel(groups)
     results(g).rasterBins = rasterBins;
     results(g).allBursts = allBursts;
 end
+end
+
 
 function plotResults(titles, psthAllGroups, psthTimes, rastersAllGroups, rasterTimes, burstsAllGroups, plotRows, plotCols)
 %%%% Plot rasters %%%%
