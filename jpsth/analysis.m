@@ -108,7 +108,7 @@ for g = 1:3 %numel(groups)
     plotProgress = 0;
     fprintf('Running burst detector...\n')
     %allBursts = cell(nTrials,numel(idsToUse));
-    for c = 1:size(spkTimes,2)
+    parfor c = 1:size(spkTimes,2)
         fprintf('%02d/%02d\n',c,size(spkTimes,2));
         x = spkTimes(:,c);
         allBursts(:,c) = SpikeFx.burstAnalysis(x,timeWin,plotProgress);
