@@ -49,11 +49,12 @@ Anchor=50;%Anchor Time
 Signif=0.05;UserSI=-log(Signif);
 Tol=1e-300;
 % add increments of 1e-6 msecs to spikes that are simultaneous
-% ex. spktimes [200 200 200 201 203] ==> 
+% ex. spktimes [200 200 200 201 203] ==>
 % after jitter = [200 200.000001 200.000002 201 203]
-jitterForSimultaneousSpikes = 1e-20;
+ jitterForSimultaneousSpikes = 1e-20;
+ [InTrain, jitterTimes] = jitterDuplicateTimestamps(inputTrain,jitterForSimultaneousSpikes);
 %jitterTimes = 0;
-[InTrain, jitterTimes] = jitterDuplicateTimestamps(inputTrain,jitterForSimultaneousSpikes);
+%InTrain = inputTrain;
 %****************Spike Train Properties*****************
 if(size(InTrain,1))>1
     InTrain=InTrain';
@@ -80,19 +81,23 @@ StopT = inStopT - offsetSpkTime;
 SPT = InTrain - offsetSpkTime;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Use spike times >
-jitterTimes(SPT ==0 | SPT == Inf)=[];
-SPT=SPT(SPT >0 & SPT < Inf)';
+useSpkIndexes = SPT >0 & SPT < Inf;
+SPT = SPT(useSpkIndexes)';
+if numel(jitterTimes) > numel(SPT)
+  jitterTimes = jitterTimes(useSpkIndexes);
+end
 
-StopT=max(0,StopT);%traps NaN
-StartT=max(0,StartT);%traps NaN
-% if(~StopT),StopT=max(SPT);end
-% if(~StartT),StartT=min(SPT);end
-minT=min(StartT,StopT);
-maxT=max(StartT,StopT);
-StartT=minT;StopT=maxT;
-Duration=StopT-StartT;
-%Average Spike Rate MU
 if(~isempty(SPT))
+    StopT=max(0,StopT);%traps NaN
+    StartT=max(0,StartT);%traps NaN
+    % if(~StopT),StopT=max(SPT);end
+    % if(~StartT),StartT=min(SPT);end
+    minT=min(StartT,StopT);
+    maxT=max(StartT,StopT);
+    StartT=minT;StopT=maxT;
+    Duration=StopT-StartT;
+    %Average Spike Rate MU
+    
     
     muWindow = (length(find(SPT>= StartT & SPT <= StopT)))/(Duration);
     muTrial = (length(SPT)-1)/(max(SPT)-min(SPT));
@@ -157,6 +162,8 @@ while(FspAB <= MaxSpikes-1 || ~Done)
         %find index that maximizes SI
         Temp=(find(diff(SI)<0));
         if (length(Temp)>1)
+            %         fprintf('Temp: \n')
+            %         disp(Temp)
             CurrEOB=Temp(min(find(Temp >1)));
             if(CurrEOB==1 && IC==1)
                 FspAB=Temp(min(find(diff(Temp) >MinSPInBurst)))+1;
@@ -190,18 +197,31 @@ while(FspAB <= MaxSpikes-1 || ~Done)
         
         %***************FIND BOB****************************
         ToI=FspAB;
-        fprintf('ToI: \n')
-        disp(ToI)
-        fprintf('CurrEOB: \n')
-        disp(CurrEOB)
-
+%         fprintf('ToI: \n')
+%         disp(ToI)
+        %         fprintf('CurrEOB: \n')
+        %         disp(CurrEOB)
+        
         BSPT=SPT(CurrEOB:-1:ToI);
-        fprintf('BSPT: \n')
-        disp(BSPT)
-
+        %         fprintf('BSPT: \n')
+        %         disp(BSPT)
+        if numel(BSPT==1)
+            BSPT = [BSPT; BSPT+Tol];
+        end
+        
         cISI=cumsum(abs(diff(BSPT)))+Anchor;
-        fprintf('cISI: \n')
-        disp(cISI)
+%                 fprintf('cISI: \n')
+%                 disp(cISI)
+%         if isempty(cISI) % same spike times
+%             fprintf('BSPT :\n')
+%             disp(BSPT)
+%             fprintf('cISI:\n')
+%             disp(cISI)
+%             cISI = Tol;
+%             fprintf('cISI = Tol:\n')
+% 
+%              disp(cISI)
+%         end
         Prob=poisscdf([1:length(cISI)]',cISI.*MU)+Tol;
         Prob=(1-Prob);
         SI=-log(Prob);
@@ -296,15 +316,36 @@ IBIT = abs(EOBT(1:end-1)-BOBT(2:end));
 % FRDB = 1000*((EOB-BOB)+1)./(EOBT-BOBT) ;
 % Count *all* spikes during burst * 1000
 FRDB = 1000*(arrayfun(@(b,e) numel(SPT(SPT>=b & SPT<=e)),BOBT,EOBT))./(EOBT-BOBT);
+% number of spikes during burst
+NSDB = arrayfun(@(b,e) numel(SPT(SPT>=b & SPT<=e)),BOBT,EOBT);
 % Firing rate Inter Burst
 % Count *all* spikes during INTER burst * 1000
-FRIB =  1000*(arrayfun(@(b,e) numel(SPT(SPT>=b & SPT<=e)),EOBT(1:end-1),BOBT(2:end)))./IBIT;
+FRDIBI =  1000*(arrayfun(@(b,e) numel(SPT(SPT>=b & SPT<=e)),EOBT(1:end-1),BOBT(2:end)))./IBIT;
+% number of spikes Inter burst
+NSDIBI = arrayfun(@(b,e) numel(SPT(SPT>=b & SPT<=e)),EOBT(1:end-1),BOBT(2:end));
 
 oStruct = cleanOutput(true);
 
     function oStruct = cleanOutput(analyzed)
         
         % Output as struct?
+        oStruct.fieldDefinitions = {
+            'spkT:spike times or train';
+            'spkTWin:spike times in time window';
+            'timeWin:time window used to compute mu for burst';
+            'bobT:begining of burst time';
+            'eobT:end of burst time';
+            'dobT:duration of burst';
+            'nsdb:number of spikes during burst';
+            'ibiT:inter burst interval time';
+            'nsdibi:number of spikes during inter burst interval';
+            'frdb:firing rate during burst';
+            'frdbAvg:firing rate during burst average';
+            'frdibi:firing rate during inter burst interval';
+            'frdibiAvg:firing rate during inter burst interval average';
+            'frdTWin:firing rate during time window';
+            'frSpkT:firing rate for spike train input';
+            };
         oStruct.timeWin = [inStartT inStopT];
         if ~analyzed
             oStruct.spkT = [];
@@ -312,25 +353,27 @@ oStruct = cleanOutput(true);
             oStruct.bobT = [];
             oStruct.eobT = [];
             oStruct.dobT = [];
+            oStruct.nsdb = [];
             oStruct.ibiT = [];
-            oStruct.frDuringBurst = [];
-            oStruct.frDuringBurstAvg = [];
-            oStruct.frInterBurst = [];
-            oStruct.frInterBurstAvg = [];
-            oStruct.frWindowTime = [];
-            oStruct.frSpikeTrain = [];
+            oStruct.nsdibi = [];
+            oStruct.frdb = [];
+            oStruct.frdbAvg = [];
+            oStruct.frdibi = [];
+            oStruct.frdibiAvg = [];
+            oStruct.frdTWin = [];
+            oStruct.frSpkT = [];
             if exist('SPT','var')
                 oStruct.spkT = SPT;
-                oStruct.frSpikeTrain = NaN;
+                oStruct.frSpkT = NaN;
                 if ~isempty(SPT)
-                    oStruct.frSpikeTrain = 1000*numel(SPT)/range(SPT);
+                    oStruct.frSpkT = 1000*numel(SPT)/range(SPT);
                 end
             end
             if exist('SPTWin','var')
                 oStruct.spkTWin = SPTWin;
-                oStruct.frWindowTime = NaN;
+                oStruct.frdTWin = NaN;
                 if ~isempty(SPT)
-                    oStruct.frWindowTime = 1000*numel(SPTWin)/range([inStartT,inStopT]);
+                    oStruct.frdTWin = 1000*numel(SPTWin)/range([inStartT,inStopT]);
                 end
             end
         else
@@ -339,18 +382,21 @@ oStruct = cleanOutput(true);
             oStruct.bobT = BOBT;
             oStruct.eobT = EOBT;
             oStruct.dobT = DOBT;
+            oStruct.nsdb = NSDB;
             oStruct.ibiT = IBIT;
-            oStruct.frDuringBurst = FRDB;
-            oStruct.frDuringBurstAvg = nanmean(FRDB);
-            oStruct.frInterBurst = FRIB;
-            oStruct.frInterBurstAvg = nanmean(FRIB);
-            oStruct.frWindowTime = 1000*numel(SPTWin)/range([inStartT,inStopT]);
-            oStruct.frSpikeTrain = 1000*numel(SPT)/range(SPT);
+            oStruct.nsdibi = NSDIBI;
+            oStruct.frdb = FRDB;
+            oStruct.frdbAvg = nanmean(FRDB);
+            oStruct.frdibi = FRDIBI;
+            oStruct.frdibiAvg = nanmean(FRDIBI);
+            oStruct.frdTWin = 1000*numel(SPTWin)/range([inStartT,inStopT]);
+            oStruct.frSpkT = 1000*numel(SPT)/range(SPT);
         end
         % replace all []/Inf fields with NaN
         fields = fieldnames(oStruct);
         for f = 1:numel(fields)
-            if isempty(oStruct.(fields{f})) || sum(isinf(oStruct.(fields{f})))
+            val = oStruct.(fields{f});
+            if isnumeric(val) && (isempty(val) || sum(isinf(val)))
                 oStruct.(fields{f}) = NaN;
             end
         end
@@ -381,8 +427,8 @@ oStruct = cleanOutput(true);
 end
 
 function [oTrain, jitterTimes] = jitterDuplicateTimestamps(inTrain, jitter)
-  jitterTimes = randperm(length(inTrain))'*jitter;
-  oTrain = sort(inTrain + jitterTimes);
+jitterTimes = randperm(length(inTrain))'*jitter;
+oTrain = sort(inTrain + jitterTimes);
 end
 
 
