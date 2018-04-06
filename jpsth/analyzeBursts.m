@@ -1,13 +1,10 @@
 function [ results ] = analyzeBursts()
 %%%%%%%%%%%%%%%%%%% User parameters Area %%%%%%%%%%%%%%%%%%%%%%%%
-timeWin = [-1000 1500];
+timeWin = [-300 600];
 fileToLoad = '/Users/subravcr/Projects/lab-schall/schalllab-jpsth/data/spikeTimes_saccAligned_sess14.mat';
 conditionsFile = '/Users/subravcr/Projects/lab-schall/schalllab-jpsth/data/ttx.mat';
 session = 14;
-condition = 'GO';
-trials = ttx.(condition){session};
-% Unit Ids, channels, layers
-unitIds = 1:size(origSpkTimes,2);
+condition = 'GO_H';
 unitChannelIds = [1, 2, 3, 4, 4, 5, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 9, 10, 10, 11, 12, 13, 14, 14, 14, 15, 17, 18, 19];
 % Attached is the   ttx  file I explained to you in person.
 % The session of interest is session 14, with 29 neurons.
@@ -20,11 +17,13 @@ load(fileToLoad);
 [~,datafile,ext] = fileparts(fileToLoad);
 datafile = [datafile ext];
 origSpkTimes = SpikeTimes.saccade;
+% Unit Ids, channels, layers
+unitIds = 1:size(origSpkTimes,2);
 % Conditions to select trials
 load(conditionsFile);
 [ ~, sessionConditionFile, ext] = fileparts(conditionsFile);
 sessionConditionFile = [sessionConditionFile ext];
-
+trials = ttx.(condition){session};
 
 cellIdsTable = table();
 cellIdsTable.unitIds = unitIds';
@@ -104,7 +103,7 @@ for g = 1:3 %numel(groups)
         allBursts(:,c) = SpikeFx.burstAnalysis(x,timeWin,plotProgress);
     end
     fprintf('done\n')
-    plotResults(titles, allPsthPsp, psthBins, allRasters, rasterBins, allBursts, pltRows, pltCols);
+    plotResults(titles, allPsthPsp, psthBins, allRasters, rasterBins, allBursts, pltRows, pltCols, condition);
     
     results(g).analysisTime = datetime;
     results(g).datafile = datafile;
@@ -123,7 +122,7 @@ end
 end
 
 
-function plotResults(titles, psthAllGroups, psthTimes, rastersAllGroups, rasterTimes, burstsAllGroups, plotRows, plotCols)
+function plotResults(titles, psthAllGroups, psthTimes, rastersAllGroups, rasterTimes, burstsAllGroups, plotRows, plotCols,condition)
 %%%% Plot rasters %%%%
 bobT = arrayfun(@(x) x{1}.bobT,burstsAllGroups,'UniformOutput',false);
 eobT = arrayfun(@(x) x{1}.eobT,burstsAllGroups,'UniformOutput',false);
@@ -138,7 +137,7 @@ for cellId = 1:numel(titles)
     hold on
     SpikeFx.plotRastersAndBursts(rastersAllGroups{cellId},rasterTimes,bobT(:,cellId),eobT(:,cellId));
     hold off
-    title(currTitle);
+    title([currTitle ' - ' condition],'Interpreter', 'none');
     xlabel('Saccade aligned');
     ylabel('Firing rate (Hz)');
     drawnow
