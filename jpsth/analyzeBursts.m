@@ -4,8 +4,13 @@ timeWin = [-1000 1500];
 fileToLoad = '/Users/subravcr/Projects/lab-schall/schalllab-jpsth/data/spikeTimes_saccAligned_sess14.mat';
 conditionsFile = '/Users/subravcr/Projects/lab-schall/schalllab-jpsth/data/ttx.mat';
 session = 14;
-condition = 'GO';
-trials = ttx.(condition){session};
+condition = 'GO_Right';
+% Load data
+load(fileToLoad);
+[~,datafile,ext] = fileparts(fileToLoad);
+datafile = [datafile ext];
+origSpkTimes = SpikeTimes.saccade;
+
 % Unit Ids, channels, layers
 unitIds = 1:size(origSpkTimes,2);
 unitChannelIds = [1, 2, 3, 4, 4, 5, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 9, 10, 10, 11, 12, 13, 14, 14, 14, 15, 17, 18, 19];
@@ -14,17 +19,11 @@ unitChannelIds = [1, 2, 3, 4, 4, 5, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 9, 10, 10, 11,
 % For the 29 neurons, the depths in channel units relative to the surface are:
 % 1, 2, 3, 4, 4, 5, 5, 5, 6, 6, 7, 7, 8, 8, ||||||| 9, 9, 9, 10, 10, 11, 12, 13, 14, 14, 14, 15, 17, 18, 19
 %
-
-
-load(fileToLoad);
-[~,datafile,ext] = fileparts(fileToLoad);
-datafile = [datafile ext];
-origSpkTimes = SpikeTimes.saccade;
 % Conditions to select trials
 load(conditionsFile);
 [ ~, sessionConditionFile, ext] = fileparts(conditionsFile);
 sessionConditionFile = [sessionConditionFile ext];
-
+trials = ttx.(condition){session};
 
 cellIdsTable = table();
 cellIdsTable.unitIds = unitIds';

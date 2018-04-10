@@ -7,54 +7,80 @@ function [oStruct]=poissBurst(inputTrain, inStartT, inStopT,varargin)
 %The spike train is a series of timestamps
 %Function p_burst
 %NOTE: Calls POISSCDF function in the STATISTICS toolbox
-%CALLING:
-%[BOB, EOB, SOB]=p_burst(InTrain, StartT, StopT)
+%INPUTS:
 %		InTrain: Timestamps of the spike train.
-%		StartT and StopT : Time limits for analysis. Spike count between
-%			these time limits are used to calculate Average Spike Rate MU
-%			for analyzing the complete spike train.
-%			Note: Burst results may not be valid outside limits.
-%OUTPUTS:
-%		BOB: A row vector containing indices for Begining Of Burst.
-%		EOB: A row vector containing indices for End Of Burst.
-%		SOB: A row vector containing Surprise Of Burst.
-%		BOBT: A row vector spike times for Begining Of Burst.
-%		EOBT: A row vector spike times for End Of Burst.
-%       IBIT: A row vector of Inter Burst Interval Times.
-%		Note: Spike Train(BOB)gives the actual times. The Spike Train
-%			however must be stripped off "zero","Nan" and "Inf"
+%		inStartT: Window start time
+%       inStopT: window stop time
+%         If no varargs, then spike count between inStartT and inStopT is
+%         used to calculate average firing rate MU for complete spike train.
+%         Burst results may not be valid outside limits. 
+%       varargin: name-value pairs of variable arguments
+%         averageFr: Mu to be used for analysis
+%         useWindowForMu: boolean, 
+%                         true [default]: use spike count between inStartT and
+%                                         inStopT for computing Mu 
+%                         false: use all spikes in inTrain for computing Mu
+%         plotBursts: boolean, 
+%                         false [default]: do not plot.  
+%                         true: plot bursts and raster. uses existing
+%                               figure. Only meaningfule for debugging.                        
+%         minSpikesInBurst: scalar 2 [default]. Min number spikes in burst  
+%         jitterSpikeTimes: boolean, useful when there are simultaneous
+%                                    spike times
+%                           false [default] do not jitter spike times
+%                           true add jitter time to spike times
+%         anchorTime: 
+%         maxExtraSpikes:
+%         maxExtraTime:
+%OUTPUTS: outStruct
+%     fieldDefinitions: definitions of each field as below
+%     spkT: spike times or train
+%     spkTWin: spike times in time window
+%     timeWin: time window used to compute mu for burst
+%     bobT: begining of burst time
+%     eobT: end of burst time
+%     dobT: duration of burst
+%     nsdb: number of spikes during burst
+%     ibiT: inter burst interval time
+%     nsdibi: number of spikes during inter burst interval
+%     frdb: firing rate during burst
+%     frdbAvg: firing rate during burst average
+%     frdibi: firing rate during inter burst interval
+%     frdibiAvg: firing rate during inter burst interval average
+%     frdTWin: firing rate during time window
+%     frSpkT: firing rate for spike train input
 %PROBLEMS:
 %		If you get an error: One or more output arguments
 %		not assigned during call to 'distchck'
 %		Change the spike Train dimension by passing
 %		a transpose(Spike Train)
+%CALLING:
+%[oStruct]=p_burst(InTrain, StartT, StopT, varargin)
+%
 % First Version Jan 5, 1998: S.Chenchal Rao
 % Modifications Mar 9, 2018: S.Chenchal Rao
-% If spike times are relative (aligned to event), then offset minimum spike
-% time to 1:
-%
+%    use relative spike times
+%    use argument parser for input control of parameters
 %
 %
 %******************User Parameters************************
-useWindowForMu = true; % default
-plotBursts = true;
-if numel(varargin) > 0
-    plotBursts = varargin{1};
-end
+opts = parseInputArgs(varargin);
 
-MaxXT=30;%Max Xtra Time
-MaxXS=10;%Max Xtra Spikes
-MinSPInBurst=2;%Minimum spkes in a Burst
-Anchor=50;%Anchor Time
+%%%%%%%%%%%%%%%% Function %%%%%%%%%%%%%%%%%%%%%%%%
+MaxXT=opts.maxExtraTime; % 30;%Max Xtra Time
+MaxXS=opts.maxExtraSpikes;% 10;%Max Xtra Spikes
+MinSPInBurst=opts.minSpikesInBurst;% 2;%Minimum spkes in a Burst
+Anchor=opts.anchorTime; %50;%Anchor Time
+
 Signif=0.05;UserSI=-log(Signif);
 Tol=1e-300;
-% add increments of 1e-6 msecs to spikes that are simultaneous
-% ex. spktimes [200 200 200 201 203] ==>
-% after jitter = [200 200.000001 200.000002 201 203]
- jitterForSimultaneousSpikes = 1e-20;
- [InTrain, jitterTimes] = jitterDuplicateTimestamps(inputTrain,jitterForSimultaneousSpikes);
-%jitterTimes = 0;
-%InTrain = inputTrain;
+if opts.jitterSpikeTimes
+    jitterForSimultaneousSpikes = 1e-20;
+    [InTrain, jitterTimes] = jitterDuplicateTimestamps(inputTrain,jitterForSimultaneousSpikes);
+else
+    jitterTimes = 0;
+    InTrain = inputTrain;
+end
 %****************Spike Train Properties*****************
 if(size(InTrain,1))>1
     InTrain=InTrain';
@@ -67,12 +93,7 @@ if(~inStartT),inStartT=min(InTrain);end
 if inStartT > inStopT
     error('Start time MUST be lower than stop time');
 end
-% Ensure start and stop times are not negative
-% Offset window time if negative
-%offsetSpkTime = 0;
-% if inStartT < 0
-%     offsetSpkTime = abs(inStartT);
-% end
+
 offsetSpkTime = min(min(InTrain),min(inStartT));
 
 StartT = inStartT - offsetSpkTime;
@@ -97,15 +118,12 @@ if(~isempty(SPT))
     StartT=minT;StopT=maxT;
     Duration=StopT-StartT;
     %Average Spike Rate MU
-    
-    
-    muWindow = (length(find(SPT>= StartT & SPT <= StopT)))/(Duration);
-    muTrial = (length(SPT)-1)/(max(SPT)-min(SPT));
-    
-    if useWindowForMu
-        MU = muWindow;
-    else
-        MU = muTrial;
+    if opts.averageFr > 0
+        MU = opts.averageFr;
+    elseif opts.useWindowForMu
+        MU = (length(find(SPT>= StartT & SPT <= StopT)))/(Duration);
+    elseif ~opts.useWindowForMu
+        MU = (length(SPT)-1)/(max(SPT)-min(SPT));
     end
     %if there are no spikes in the spike train or
     %n spikes in train is less than 4
@@ -196,12 +214,7 @@ while(FspAB <= MaxSpikes-1 || ~Done)
         CurrEOB=CurrEOB+FromI;
         
         %***************FIND BOB****************************
-        ToI=FspAB;
-%         fprintf('ToI: \n')
-%         disp(ToI)
-        %         fprintf('CurrEOB: \n')
-        %         disp(CurrEOB)
-        
+        ToI=FspAB;        
         BSPT=SPT(CurrEOB:-1:ToI);
         %         fprintf('BSPT: \n')
         %         disp(BSPT)
@@ -210,18 +223,6 @@ while(FspAB <= MaxSpikes-1 || ~Done)
         end
         
         cISI=cumsum(abs(diff(BSPT)))+Anchor;
-%                 fprintf('cISI: \n')
-%                 disp(cISI)
-%         if isempty(cISI) % same spike times
-%             fprintf('BSPT :\n')
-%             disp(BSPT)
-%             fprintf('cISI:\n')
-%             disp(cISI)
-%             cISI = Tol;
-%             fprintf('cISI = Tol:\n')
-% 
-%              disp(cISI)
-%         end
         Prob=poisscdf([1:length(cISI)]',cISI.*MU)+Tol;
         Prob=(1-Prob);
         SI=-log(Prob);
@@ -245,9 +246,6 @@ while(FspAB <= MaxSpikes-1 || ~Done)
         end
         %Check for convergence among 3 values for each
         if(OldBOB==CurrBOB && OldEOB==CurrEOB )
-            %Converged
-            %disp(['Burst Number ',num2str(BNo),' Converged in ',num2str(IC),' iterations'])
-            %disp(['BOB Index ',num2str(CurrBOB),' EOB Index 'num2str(CurrEOB)])
             Iterate=0;
             ISBURST=1;
             break
@@ -304,7 +302,7 @@ EOBT = SPT(EOB)';
 
 % only spkTimes in window
 SPTWin = SPT(SPT>=inStartT & SPT<=inStopT);
-if plotBursts
+if opts.plotBursts
     plotIt;
 end
 % Duration of burst
@@ -419,16 +417,37 @@ oStruct = cleanOutput(true);
         set(findobj('type','axes'),'color',[1 1 1],'ytick',[],'box','on')
         for burstIndex=1:length(EOBT)
             plot(SPT(SPT>=BOBT(burstIndex) & SPT<=EOBT(burstIndex)),1.1,strcat(colors_(burstIndex),'+'));
-            
-            %plot(SPT(BOB(burstIndex):EOB(burstIndex)),1.1,strcat(colors_(burstIndex),'+'));
         end
         drawnow
     end
 end
 
+function [ args ] = parseInputArgs(varargin)
+   
+   argParser = inputParser();
+   argParser.addParameter('jitterSpikeTimes', false); % default
+   argParser.addParameter('useWindowForMu', true) % default
+   argParser.addParameter('minSpikesInBurst', 2); % default
+   argParser.addParameter('averageFr', 0); % default
+   argParser.addParameter('maxExtraTime', 30); % default
+   argParser.addParameter('maxExtraSpikes', 10); % default
+   argParser.addParameter('anchorTime', 50); % default
+   argParser.addParameter('plotBursts', true); % default  
+   if ~isempty(varargin{1})
+      argParser.parse(varargin{1}{:});
+   end
+   args = argParser.Results;
+end
+
+
+
 function [oTrain, jitterTimes] = jitterDuplicateTimestamps(inTrain, jitter)
-jitterTimes = randperm(length(inTrain))'*jitter;
-oTrain = sort(inTrain + jitterTimes);
+    % add increments of jitter (1e-6) msecs to spikes that are simultaneous
+    % ex. spktimes [200 200 200 201 203] ==>
+    % after jitter = [200 200.000001 200.000002 201 203]
+
+    jitterTimes = randperm(length(inTrain))'*jitter;
+    oTrain = sort(inTrain + jitterTimes);
 end
 
 
