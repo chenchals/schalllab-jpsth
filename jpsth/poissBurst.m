@@ -432,7 +432,7 @@ function [ args ] = parseInputArgs(varargin)
    argParser.addParameter('maxExtraTime', 30); % default
    argParser.addParameter('maxExtraSpikes', 10); % default
    argParser.addParameter('anchorTime', 50); % default
-   argParser.addParameter('plotBursts', true); % default  
+   argParser.addParameter('plotBursts', false); % default  
    if ~isempty(varargin{1})
       argParser.parse(varargin{1}{:});
    end
