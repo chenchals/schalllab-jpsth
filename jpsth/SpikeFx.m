@@ -60,6 +60,56 @@ classdef SpikeFx
 
         end
         
+        function outputArg = psbh(bobT, eobT, timeWin, fx)
+            %PSBH Peri Stimulus Burst Histogram 
+            %   Compute PSBH, PSBH-SD, PSBH-VAR for given bob, eob times.
+            %   bobT : Cell array of doubles (begining of Burst Time).  The
+            %      cell array must be {nTrials x 1}. Each element in the cell
+            %      array is a row vector (nTimeStamps x 1) of timestamps
+            %   eobT : Cell array of doubles (begining of Burst Time).  The
+            %      cell array must be {nTrials x 1}. Each element in the cell
+            %      array is a row vector (nTimeStamps x 1) of timestamps            
+            %   timeWin: [minTime maxTime] for PSBH
+            %   fx:  Built-in function-handle to be used for PSBH. Valid
+            %        args are: @nanmean, @nanstd, @nanvar   
+            
+            % for each trial convert bobT_i to eobT_i
+            
+            outputArg.burstRasters = arrayfun(@(x,y) SpikeFx.burstToRaster(x, y, timeWin),...
+                                               bobT, eobT);
+
+        end
+        
+        function outputArg = burstToRaster(bobt, eobt, timeWin)
+            % is there a vectorization possibility?
+            srcT = min(bobt):max(eobt);
+            srcRaster = zeros(1, numel(srcT));
+            for i = 1:numel(bobt)
+                srcRaster(find(srcT==bobt(i)):find(srcT==eobt(i))) = 1;
+            end
+            destT = min(timeWin):max(timeWin);
+            outputArg = zeros(1,numel(destT));
+            % find begin index..
+            if min(bobt) < min(timeWin)
+                srcBegin = find(srcT==min(timeWin));
+                destBegin = 1;
+            else
+                srcBegin = 1;
+                destBegin = find(destT==min(bobt));
+            end
+            % find end index..
+            if max(eobt) > max(timeWin)
+                srcEnd = find(srcT==max(timeWin));
+                destEnd = numel(destT);
+            else
+                srcEnd = numel(srcT);
+                destEnd = find(destT==max(eobt));
+            end
+            
+            outputArg(destBegin:destEnd) = srcRaster(srcBegin:srcEnd);           
+        end
+        
+        
         function outputArg = burstAnalysis(cellSpikeTimes,timeWin, varargin)
             %BURSTANALYSIS
             outputArg = cellfun(@(x) ...
