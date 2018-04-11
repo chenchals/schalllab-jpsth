@@ -1,17 +1,20 @@
-function [outVar, jpsthStruct] = newJpsth(alignedSpkTimes,timeWindow,binWidth,coincidenceBins)
+function [outVar, jpsthStruct] = newJpsth(alignedSpkTimes,timeWindow,binWidth,coinBins)
 %NEWJPSTH Compute rasters, psth, normalizedJPSTH, xCorrHistogram, coincidenceHistogram
 %   alignedSpkTimes: Cell array of {nTrials, kCells} - Aligned spike times of all cells
 %                    Example Data: alignedSpkTimes = SpikeTimes.saccade;
-
+% Example:
+% load('data/spikeTimes_saccAligned_sess14.mat');
+% [oVar, oJpsth]=newJpsth(SpikeTimes.saccade,[-200 1000],1,10);
 
 minTime = min(timeWindow);
 maxTime = max(timeWindow);
-coinBins = coincidenceBins;
+coincidenceBins = coinBins;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-timeBins = minTime:binWidth:maxTime;
 binEdges = minTime-binWidth/2 : binWidth : maxTime+binWidth/2;
+
+%% Define function handles to call %%
 % Function handle for rasters
 fx_rasters = @(c) cell2mat(cellfun(@(x) histcounts(x,'BinEdges',binEdges),...
                    c,'UniformOutput',false));
@@ -22,13 +25,14 @@ fx_xcorrh = @(jpsth,lagBins)...
     -abs(lagBins):abs(lagBins))]';
 % Coincidence Histogram
 fx_coinh = @getCoincidence;
-
-nBins = numel(timeBins);
+%% Compute pairs to be usedfor JPSTH %%
+timeBins = minTime:binWidth:maxTime;
 nTrials = size(alignedSpkTimes,1);
 nCells = size(alignedSpkTimes,2);
 pairs = nchoosek(1:nCells,2);
 nPairs = size(pairs,1);
 
+%% Compute Rasters and psth stats for all cells %%
 % Make all vars matlab arrays (single), in case we need to use gpu  processing
 rasters = arrayfun(@(x) fx_rasters(x),alignedSpkTimes,'UniformOutput',false);
 % Convert rasters of {nTrials, kCells} to {kCells} 
@@ -39,7 +43,7 @@ rasters = arrayfun(@(x) cell2mat(rasters(:,x)),(1:nCells)','UniformOutput',false
 psth = (arrayfun(@(x) fx_psth(rasters(x),binWidth,@mean), (1:nCells)','UniformOutput',false));
 psthSd = (arrayfun(@(x) fx_psth(rasters(x),binWidth,@std), (1:nCells)','UniformOutput',false));
 
-tic
+%% Compute JPSTH for each pair %%
 
 for i = 1:nPairs
     temp = struct();
@@ -60,9 +64,9 @@ for i = 1:nPairs
     % JPSTH Equations from Aertsen et al. 1989
     % Note bins [1,1] is top-left and [n,n] is bottom-right
     temp.rawJpsth = (xRasters'*yRasters)/(nTrials*binWidth^2); % Eq. 3
-    predicted = xPsth' * yPsth;			                  % Eq. 4
+    predicted = xPsth' * yPsth;			                       % Eq. 4
     unnormalizedJpsth = temp.rawJpsth - predicted;             % Eq. 5
-    normalizer = xPsthSd' * yPsthSd;                      % Eq. 7a
+    normalizer = xPsthSd' * yPsthSd;                           % Eq. 7a
     temp.normJpsth = unnormalizedJpsth ./ normalizer;          % Eq. 9
     temp.normJpsth(isnan(temp.normJpsth)) = 0;
     % lagBins for xCorr 

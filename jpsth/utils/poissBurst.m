@@ -433,6 +433,7 @@ function [ args ] = parseInputArgs(varargin)
    argParser.addParameter('maxExtraSpikes', 10); % default
    argParser.addParameter('anchorTime', 50); % default
    argParser.addParameter('plotBursts', false); % default  
+   argParser.parse();
    if ~isempty(varargin{1})
       argParser.parse(varargin{1}{:});
    end
@@ -460,5 +461,7 @@ end
 % OStructAllCells = arrayfun(@(x) poissBurst(x{1},-200,800),fx_allCells(SpikeTimes.saccade),'UniformOutput',false);
 % allOStruct = arrayfun(@(c) arrayfun(@(x) poissBurst(x{1},-200,800),c,'UniformOutput',false),SpikeTimes.saccade,'UniformOutput',false);
 
-
+% to get to allBurst fields:
+% cellIndex = 5;
+%allBobT = arrayfun(@(x) res(1).allBursts{x,cellIndex}.bobT, (1:size(allBursts,1))','UniformOutput',false);
 
