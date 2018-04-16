@@ -37,7 +37,7 @@ groups = {'units', 'channelUnits', 'layerUnits'};
 % prune spkTimes . ?
 spkTimesTrials = origSpkTimes(trials,:);
 results = struct();
-for g = 1:3 %numel(groups)
+for g = 1:1 %numel(groups)
     
     clearvars prefix units2Use allPsth allPsthPsp psthBins allRasters rasterBins temp allBursts pltRows pltCols
     
@@ -100,7 +100,7 @@ for g = 1:3 %numel(groups)
     for c = 1:size(spkTimes,2)
         fprintf('%02d/%02d\n',c,size(spkTimes,2));
         x = spkTimes(:,c);
-        allBursts(:,c) = BurstUtils.burstAnalysis(x,timeWin,'anchorTime', 55);
+        allBursts(:,c) = BurstUtils.detectBursts(x,timeWin);
     end
     fprintf('done\n')
     plotResults(titles, allPsthPsp, psthBins, allRasters, rasterBins, allBursts, pltRows, pltCols);
@@ -118,6 +118,17 @@ for g = 1:3 %numel(groups)
     results(g).allRasters = allRasters;
     results(g).rasterBins = rasterBins;
     results(g).allBursts = allBursts;
+    
+    % further burst analysis
+    fx_t = @(fn,cellBursts) cellfun(@(x) x.(fn),cellBursts,'UniformOutput',false);     
+    for c = 1:size(allBursts,2)
+        currBursts = allBursts(:,c);
+        allBurstHists(:,c) = BurstUtils.psbh(fx_t('bobT',currBursts),fx_t('eobT',currBursts),timeWin);
+    end
+   
+    results(g).allBurstHists = allBurstHists;
+    
+    
 end
 end
 
