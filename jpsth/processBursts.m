@@ -8,7 +8,7 @@ function processBursts()
     cellInfoTable = temp.cellInfoDB;
     clearvars temp cellInfoDB cellInfoDbFile
 
-    parfor i = 1:size(cellInfoTable,1)
+    for i = 237:size(cellInfoTable,1)
         cellInfo = cellInfoTable(i,:);
         datafile = fullfile(dataDir, cellInfo.dataFile{1});
         sessionNo = cellInfo.SessionNo;
@@ -34,5 +34,9 @@ function [ spkTimes, timeWins ] = getSpikeTimesByTrials(datafile, cellId)
     spkTimes = arrayfun(@(t) unitTimes(unitTimes>=trialStart(t) & unitTimes<trialStart(t+1)),...
         [1:numel(trialStart)-1]','UniformOutput',false);
     spkTimes{end+1} = unitTimes(unitTimes>=trialStart(end));
-    timeWins = [trialStart(:) [trialStart(2:end);unitTimes(end)]];
+    lastSpkTime = unitTimes(end);
+    if lastSpkTime < trialStart(end) % no spikes afetr lastSpkTime
+        lastSpkTime = trialStart(end) + 1;
+    end
+    timeWins = [trialStart(:) [trialStart(2:end);lastSpkTime]];
 end
