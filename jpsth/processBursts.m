@@ -1,14 +1,26 @@
 function processBursts()
+% PROCESSBURSTS Runs poissBurst on sigle units for all sessions.  The cell
+%   information/parameters for each single unit is defined in each row in
+%   the CellInfoDB.mat file. 
+%   The .mat data file for each cell specifed in the is loaed form the [dataDir] variable 
+%   Results of processing each row of this table is saved to filename that
+%   is a concatenation of cellId and session no: [UID_0000_session_000.mat]
+%   in [analysisDir] variable. 
 
-    dataDir ='/Volumes/schalllab/Users/Amir/Analysis/Mat_DataFiles';
-    cellInfoDbFile = 'data/Analysis/burstDB/cellInfoDB.mat';
-    analysisDir = 'data/Analysis/burstDB';
+%     dataDir ='/Volumes/schalllab/Users/Amir/Analysis/Mat_DataFiles';
+%     cellInfoDbFile = 'data/Analysis/burstDB/cellInfoDB.mat';
+%     analysisDir = 'data/Analysis/burstDB';
+% On Teba
+    dataDir ='/mnt/teba/Users/Amir/Analysis/Mat_DataFiles';
+    cellInfoDbFile = '/mnt/teba/Users/Amir/0-chenchal/BurstAnalysis/burstDB/CellInfoDB.mat';
+    analysisDir = '/mnt/teba/Users/Amir/0-chenchal/BurstAnalysis/burstDB';
     % Load cell inforamation database table
     temp = load(cellInfoDbFile);
     cellInfoTable = temp.cellInfoDB;
     clearvars temp cellInfoDB cellInfoDbFile
-
-    for i = 237:size(cellInfoTable,1)
+    
+    %parpool(20);
+    parfor i = 1:size(cellInfoTable,1)
         cellInfo = cellInfoTable(i,:);
         datafile = fullfile(dataDir, cellInfo.dataFile{1});
         sessionNo = cellInfo.SessionNo;
