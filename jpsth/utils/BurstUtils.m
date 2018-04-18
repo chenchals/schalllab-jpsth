@@ -37,7 +37,8 @@ classdef BurstUtils
             %DETECTBURSTS
             if isempty(timeWin) % use minmax of spike times for every trial
                 timeWins = cellfun(@(x) [min(x) max(x)],cellSpikeTimes,'UniformOutput',false);
-                % if there are empty timeWins, set them to [0 0]
+                % if there are any empty timeWins, ie the trial had NaN or
+                % zero spikes then, set those timeWins to [0 0] 
                 for ii=1:size(timeWins,1)
                     if isempty(timeWins{ii})
                         timeWins{ii,:}=[0 0];
@@ -64,6 +65,18 @@ classdef BurstUtils
             %fx_t = @(fn) cellfun(@(x) x.(fn),allBursts,'UniformOutput',false);
         end
         
+        function outputArg = loadCellBursts(cellNos,fileList,blacklistedUIDs)           
+            for i = 1:numel(cellNos)
+                cellNo = cellNos(i);
+                cellUID =  num2str(cellNo,'UID_%04d');
+                if ~sum(contains(blacklistedUIDs,cellUID))
+                    fileIndex = find(~cellfun(@isempty,regexp(fileList,cellUID,'match')));
+                    burstFile = fileList{fileIndex}; %#ok<FNDSB>
+                    outputArg{i,1} = load(burstFile);
+                end
+            end
+        end
+            
         function saveOutput(oFile, resCellArray,varargin)
             % SAVEOUTPUT Saves output of burst analysis for a single unit
             % varargin:
