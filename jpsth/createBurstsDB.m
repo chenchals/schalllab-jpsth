@@ -1,5 +1,4 @@
-function processBursts()
-% PROCESSBURSTS Runs poissBurst on sigle units for all sessions.  The cell
+% CREATEBURSTSDB Runs poissBurst on sigle units for all sessions.  The cell
 %   information/parameters for each single unit is defined in each row in
 %   the CellInfoDB.mat file. 
 %   The .mat data file for each cell specifed in the is loaed form the [dataDir] variable 
@@ -16,12 +15,12 @@ function processBursts()
     analysisDir = '/mnt/teba/Users/Amir/0-chenchal/BurstAnalysis/burstDB';
     % Load cell inforamation database table
     temp = load(cellInfoDbFile);
-    cellInfoTable = temp.cellInfoDB;
+    CellInfoDB = temp.CellInfoDB;
     clearvars temp cellInfoDB cellInfoDbFile
     
     %parpool(20);
-    parfor i = 1:size(cellInfoTable,1)
-        cellInfo = cellInfoTable(i,:);
+    parfor i = 1:size(CellInfoDB,1)
+        cellInfo = CellInfoDB(i,:);
         datafile = fullfile(dataDir, cellInfo.dataFile{1});
         sessionNo = cellInfo.SessionNo;
         analysisFile = fullfile(analysisDir,[cellInfo.UID '_session_' num2str(sessionNo,'%03d')]);
@@ -33,8 +32,6 @@ function processBursts()
         BurstUtils.saveOutput(analysisFile,oBursts,'cellInfo',cellInfo);
         fprintf('wrote file %s\n\n',analysisFile);
     end
-
-end
 
 %% internal fx for getting and spiketime data by trials 
 function [ spkTimes, timeWins ] = getSpikeTimesByTrials(datafile, cellId)
