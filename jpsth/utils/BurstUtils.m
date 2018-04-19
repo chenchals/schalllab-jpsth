@@ -80,8 +80,11 @@ classdef BurstUtils
         
         function outputArg = alignForTrials(burstTimes, varargin)
             defaultArgs = {'alignTimes', [], @isnumeric,...
-                'timeWin', [], @(x) isnumeric(x) && numel(x)==2 && diff(x)>0,...
                 'trials', [] @isnumeric};
+            % This is more complicated... what if burst spans the begining
+            % or end of timeWin?
+           %'timeWin', [], @(x) isnumeric(x) && numel(x)==2 && diff(x)>0,...
+
             argParser = BurstUtils.createArgParser(defaultArgs);
             if ~isempty(varargin)
                 argParser.parse(varargin{:});
@@ -101,10 +104,12 @@ classdef BurstUtils
                 outputArg = outputArg(args.trials);
             end
             % output only windowed bursts
-            if ~isempty(args.timeWin)
-                outputArg = cellfun(@(x) x(x>=args.timeWin(1) && x<=args.timeWin(2)),...
-                                    outputArg, 'UniformOutput', false);
-            end
+            % This is more complicated... what if burst spans the begining
+            % or end of timeWin?
+%             if ~isempty(args.timeWin)
+%                 outputArg = cellfun(@(x) x(x>=args.timeWin(1) && x<=args.timeWin(2)),...
+%                                     outputArg, 'UniformOutput', false);
+%             end
             
         end
         
