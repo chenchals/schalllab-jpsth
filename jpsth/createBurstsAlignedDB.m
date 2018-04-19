@@ -49,11 +49,23 @@
         for e = 1:numel(alignEvents)
             eventName = alignEvents{e};
             alignTimes = alignTimesDb.(eventName){sessionIndex};
-            aBursts.([eventName '_aligned']).bobT = BurstUtils.alignForTrials(...
+            aBursts.(['bobT_' eventName '_aligned']) = BurstUtils.alignForTrials(...
                                                     cellBursts.bobT,'alignTimes',alignTimes);
-            aBursts.([eventName '_aligned']).eobT = BurstUtils.alignForTrials(...
+            aBursts.(['eobT_' eventName '_aligned']) = BurstUtils.alignForTrials(...
                                                     cellBursts.eobT,'alignTimes',alignTimes);
+            % add other fields like number of 
         end
+        fn = fieldnames(cellBursts);       
+        for f = 1:numel(fn)
+            aBursts.(fn{f})=cellBursts.(fn{f}); 
+        end
+        if isfield(aBursts, 'analysisDate')
+            aBursts.analysisDate(1,end+1) = datetime;
+        else
+            aBursts.analysisDate = datetime;
+        end
+
+        aBursts = orderfields(aBursts);
         save(analysisFile,'-struct', 'aBursts');
         save(analysisFile,'-append', 'cellInfo');
         fprintf('wrote file %s\n\n',analysisFile);
