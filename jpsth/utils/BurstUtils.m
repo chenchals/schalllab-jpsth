@@ -110,14 +110,43 @@ classdef BurstUtils
             % Select trials, intentionally selecting AFTER alignment
             if numel(args.trials) > 0
                 outputArg = outputArg(args.trials);
+            end            
+        end
+        
+        % in Progress....
+        function outputArg = selectBurstsInTimeWin(bobT, eobT, timeWin)
+            % SELECTBURSTSINTIMEWIN Select burts in the given time window
+            % for testing:
+            % bt=-100:10:100;bobT=num2cell(bt(1:2:end-1));eobT=num2cell(bt(2:2:end));
+            
+            assert(isnumeric(timeWin) && numel(timeWin)==2 && diff(timeWin) > 0,...
+                    'timeWin must be a 2-element vector of doubles with diff > 0');
+                
+            bobInd = cellfun(@(x) find(x>=timeWin(1) & x<=timeWin(2)), bobT, 'UniformOutput', false);
+            eobInd = cellfun(@(x) find(x>=timeWin(1) & x<=timeWin(2)), eobT, 'UniformOutput', false);
+            % Time window includes (bobT, eobT) for all bursts
+            commonInds = cellfun(@(b,e) intersect(b,e), bobInd, eobInd, 'UniformOutput', false); 
+            % TimWin has eobT, without bobT, first bobT is before TimeWin
+            nanBobInds = find(cell2mat(cellfun(@(b,e) numel(setdiff(e,b)), bobInd, eobInd, 'UniformOutput', false)));
+            % TimeWin has bobT, without eobT last eobT is after TimeWin
+            nanEobInds = find(cell2mat(cellfun(@(b,e) numel(setdiff(b,e)), bobInd, eobInd, 'UniformOutput', false)));            
+            % get all common
+            bobs = cellfun(@(b,i) b(i), bobT, bobInd,'UniformOutput',false);
+            eobs = cellfun(@(e,i) e(i), eobT, eobInd,'UniformOutput',false);
+            % pre-append Nan for BOB
+            for j = 1:numel(nanBobInds)
+                bobs{nanBobInds(j)} = [NaN bobs{nanBobInds(j)}];
             end
-            % output only windowed bursts
-            % This is more complicated... what if burst spans the begining
-            % or end of timeWin?
-%             if ~isempty(args.timeWin)
-%                 outputArg = cellfun(@(x) x(x>=args.timeWin(1) && x<=args.timeWin(2)),...
-%                                     outputArg, 'UniformOutput', false);
-%             end
+            % post-append Nan for EOB
+            for j = 1:numel(nanEobInds)
+                eobs{nanEobInds(j)} = [eobs{nanEobInds(j)} NaN];
+            end
+
+            outputArg.bobs = bobs;
+            outputArg.eobs = eobs;
+            outputArg.commonInds = commonInds;
+            outputArg.nanBobInds = nanBobInds;
+            outputArg.nanEobInds = nanEobInds;
             
         end
         
