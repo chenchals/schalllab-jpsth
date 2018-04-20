@@ -36,7 +36,10 @@
     clearvars temp
     
     %parpool(20);
-    for i = 1:1 %numel(burstFullfiles)
+    % had to update code for cell 569 all bobT are NaN except 1
+    % so bobT will be numeric and not a cell array, so convert to cell
+    % array by calling num2cell in BurstUtils.alignForTrials
+    for i = 1:numel(burstFullfiles)
         burstF = burstFullfiles{i};
         analysisFile = fullfile(analysisDir,[burstFiles{i} '_aligned.mat']);
         fprintf('Aligning bursts for file %s\n',burstF);
@@ -53,8 +56,8 @@
                                                     cellBursts.bobT,'alignTimes',alignTimes);
             aBursts.(['eobT_' eventName '_aligned']) = BurstUtils.alignForTrials(...
                                                     cellBursts.eobT,'alignTimes',alignTimes);
-            % add other fields like number of 
         end
+        % add other fields like number of 
         fn = fieldnames(cellBursts);       
         for f = 1:numel(fn)
             aBursts.(fn{f})=cellBursts.(fn{f}); 
@@ -66,7 +69,11 @@
         end
 
         aBursts = orderfields(aBursts);
-        save(analysisFile,'-struct', 'aBursts');
-        save(analysisFile,'-append', 'cellInfo');
+        saveFile(analysisFile, aBursts);
+
         fprintf('wrote file %s\n\n',analysisFile);
+    end
+    
+    function saveFile(fname, outStruct)
+       save(fname, '-struct', 'outStruct');
     end

@@ -79,6 +79,10 @@ classdef BurstUtils
         end
         
         function outputArg = alignForTrials(burstTimes, varargin)
+            % ALIGNFORTRIALS 
+            %      burstTimes: must be a cell array, if not is converted to
+            %                 cell array
+            
             defaultArgs = {'alignTimes', [], @isnumeric,...
                 'trials', [] @isnumeric};
             % This is more complicated... what if burst spans the begining
@@ -90,11 +94,15 @@ classdef BurstUtils
                 argParser.parse(varargin{:});
             end
             args = argParser.Results;
+            if isnumeric(burstTimes)
+                burstTimes = num2cell(burstTimes);
+            end
+            
             % do alignTimes first
             if numel(args.alignTimes)==1
                 outputArg = cellfun(@(b) b-args.alignTimes, burstTimes,'UniformOutput', false);
             elseif numel(args.alignTimes) == size(burstTimes,1)
-                alignTimes = arrayfun(@(x) {x}, args.alignTimes);
+                alignTimes = arrayfun(@(x) {x}, args.alignTimes);                
                 outputArg = cellfun(@(b,t) b-t, burstTimes, alignTimes, 'UniformOutput', false);
             else
                 error('Number of times in alignTimes must be 1 or equal to no of trials in burstTimes');
