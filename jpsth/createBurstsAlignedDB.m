@@ -57,7 +57,7 @@
             aBursts.(['eobT_' eventName '_aligned']) = BurstUtils.alignForTrials(...
                                                     cellBursts.eobT,'alignTimes',alignTimes);
         end
-        % add other fields like number of 
+        % add other fields like number of dob (duration of burst etc)
         fn = fieldnames(cellBursts);       
         for f = 1:numel(fn)
             aBursts.(fn{f})=cellBursts.(fn{f}); 
