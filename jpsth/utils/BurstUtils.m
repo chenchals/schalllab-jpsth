@@ -144,7 +144,7 @@ classdef BurstUtils
 
             outputArg.bobs = bobs;
             outputArg.eobs = eobs;
-            outputArg.commonInds = commonInds;
+            outputArg.bothBobAndEobInds = commonInds;
             outputArg.nanBobInds = nanBobInds;
             outputArg.nanEobInds = nanEobInds;
             
