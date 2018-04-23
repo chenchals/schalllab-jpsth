@@ -351,7 +351,7 @@ oStruct = cleanOutput(true);
         % Output as struct?
         oStruct.fieldDefinitions = {
             % 'spkT:spike times or train';
-            % 'spkTWin:spike times in time window';
+            'spkTWin:spike times in time window';
             'opts:options used for poissBurst call';
             'timeWin:time window used to compute mu for burst';
             'nb:number of bursts';
@@ -372,7 +372,7 @@ oStruct = cleanOutput(true);
         oStruct.timeWin = [inStartT inStopT];
         if ~analyzed
             % oStruct.spkT = [];
-            % oStruct.spkTWin = [];
+            oStruct.spkTWin = [];
             oStruct.nb = 0;
             oStruct.bobT = [];
             oStruct.eobT = [];
@@ -402,7 +402,7 @@ oStruct = cleanOutput(true);
             end
         else
             %oStruct.spkT = SPT;
-            %oStruct.spkTWin = SPTWin;
+            oStruct.spkTWin = SPTWin;
             oStruct.nb = numel(BOBT);
             oStruct.bobT = BOBT;
             oStruct.eobT = EOBT;

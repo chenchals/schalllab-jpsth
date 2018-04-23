@@ -9,10 +9,10 @@
     baseDir = '/mnt/teba';
 
     dataDir = fullfile(baseDir,'Users/Amir/Analysis/Mat_DataFiles');
-    burstDbDir = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis/burstDB');
-    cellInfoDbFile = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis/burstDB/CellInfoDB.mat');
-    trialEventTimesDbFile = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis/burstDB/TrialEventTimesDB.mat');
-    analysisDir = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis/burstAlignedDB');
+    burstDbDir = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis2/burstDB');
+    cellInfoDbFile = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis2/burstDB/CellInfoDB.mat');
+    trialEventTimesDbFile = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis2/burstDB/TrialEventTimesDB.mat');
+    analysisDir = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis2/burstAlignedDB');
     
     %% Processing Logic %%
     if ~exist(analysisDir,'dir')
@@ -53,9 +53,13 @@
             eventName = alignEvents{e};
             alignTimes = alignTimesDb.(eventName){sessionIndex};
             aBursts.(['bobT_' eventName '_aligned']) = BurstUtils.alignForTrials(...
-                                                    cellBursts.bobT,'alignTimes',alignTimes);
+                cellBursts.bobT,'alignTimes',alignTimes);
             aBursts.(['eobT_' eventName '_aligned']) = BurstUtils.alignForTrials(...
-                                                    cellBursts.eobT,'alignTimes',alignTimes);
+                cellBursts.eobT,'alignTimes',alignTimes);
+            
+            aBursts.(['spkTWin_' eventName '_aligned']) = BurstUtils.alignForTrials(...
+                cellBursts.spkTWin,'alignTimes',alignTimes);
+            
         end
         % add other fields like number of dob (duration of burst etc)
         fn = fieldnames(cellBursts);       

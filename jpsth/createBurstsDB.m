@@ -11,8 +11,8 @@
 %     analysisDir = 'data/Analysis/burstDB';
 % On Teba
     dataDir ='/mnt/teba/Users/Amir/Analysis/Mat_DataFiles';
-    cellInfoDbFile = '/mnt/teba/Users/Amir/0-chenchal/BurstAnalysis/burstDB/CellInfoDB.mat';
-    analysisDir = '/mnt/teba/Users/Amir/0-chenchal/BurstAnalysis/burstDB';
+    cellInfoDbFile = '/mnt/teba/Users/Amir/0-chenchal/BurstAnalysis2/burstDB/CellInfoDB.mat';
+    analysisDir = '/mnt/teba/Users/Amir/0-chenchal/BurstAnalysis2/burstDB';
     % Load cell inforamation database table
     temp = load(cellInfoDbFile);
     CellInfoDB = temp.CellInfoDB;

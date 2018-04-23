@@ -175,11 +175,11 @@ classdef BurstUtils
                         t.(fn) = resCellArray{1}.(fn);
                     otherwise
                         temp = var_fx(fn,resCellArray);
-                        tempvals = [temp{:}];
-                        if numel(tempvals) == nTrials
+                        if size(temp,2) > 1
+                            % should not be the case
+                            tempvals = [temp{:}];
                             t.(fn) = tempvals(:);% make a col. vector
                         else
-                            %t.(fn) = [temp{:}];
                             t.(fn) = temp;
                         end
                 end

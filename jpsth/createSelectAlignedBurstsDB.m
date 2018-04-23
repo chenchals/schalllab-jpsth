@@ -9,10 +9,10 @@
     baseDir = '/mnt/teba';
 
     dataDir = fullfile(baseDir,'Users/Amir/Analysis/Mat_DataFiles');
-    burstAlignedDbDir = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis/burstAlignedDB');
-    cellInfoDbFile = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis/burstAlignedDB/CellInfoDB.mat');
-    trialEventTimesDbFile = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis/burstAlignedDB/TrialEventTimesDB.mat');
-    analysisDir = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis/burstAlignedTimeWindowDB');
+    burstAlignedDbDir = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis2/burstAlignedDB');
+    cellInfoDbFile = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis2/burstAlignedDB/CellInfoDB.mat');
+    trialEventTimesDbFile = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis2/burstAlignedDB/TrialEventTimesDB.mat');
+    analysisDir = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis2/burstAlignedTimeWindowDB');
     
     % Aligning event time windows to use
     alignEventTimeWin.Reward = [-800 500];
@@ -53,6 +53,7 @@
         allFns = fieldnames(burstData);
         bobFns= allFns(contains(allFns,'bobT_'));
         eobFns= allFns(contains(allFns,'eobT_'));
+        spkTWinFns= allFns(contains(allFns,'spkTWin_'));
         
         aeFields = fieldnames(alignEventTimeWin);
         
@@ -61,12 +62,16 @@
             oFn = [aeName '_aligned_timeWin'];
             bobFn = bobFns{contains(bobFns, aeName)};
             eobFn = eobFns{contains(eobFns, aeName)};
+            spkTWinFn = spkTWinFns{contains(spkTWinFns, aeName)};
+            twin = alignEventTimeWin.(aeName);
             
             temp = BurstUtils.selectBurstsInTimeWin(...
-                       burstData.(bobFn), burstData.(eobFn), alignEventTimeWin.(aeName));
+                       burstData.(bobFn), burstData.(eobFn), twin);
              o.(oFn).bobT = temp.bobs;
              o.(oFn).eobT = temp.eobs;
-             % prune other fiekds from cellBurst data
+             o.(oFn).spkTWin = cellfun(@(x) x(x>=twin(1) & x<=twin(2)),...
+                       burstData.(spkTWinFn),'UniformOutput',false);
+             % prune other fields from cellBurst data
              bothIndices = temp.bothBobAndEobInds;
              for j = 1:numel(bothIndices)
                  jj = bothIndices{j};
@@ -97,7 +102,7 @@
             o.(fns{kk}) = struct2table(o.(fns{kk}));
         end
         % add other fields
-        o.fieldDefinitions = burstData.fieleDefinitions;
+        o.fieldDefinitions = burstData.fieldDefinitions;
         o.alignEventTimeWin = alignEventTimeWin;
         o.burstOpts = burstData.opts;
         o.cellInfo = burstData.cellInfo;
@@ -106,6 +111,7 @@
         saveFile(analysisFile, o);
 
         fprintf('wrote file %s\n\n',analysisFile);
+        clearvars o fns 
         toc
     end
 
