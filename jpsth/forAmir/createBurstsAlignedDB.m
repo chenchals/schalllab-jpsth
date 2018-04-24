@@ -39,7 +39,7 @@
     % had to update code for cell 569 all bobT are NaN except 1
     % so bobT will be numeric and not a cell array, so convert to cell
     % array by calling num2cell in BurstUtils.alignForTrials
-    for i = 1:numel(burstFullfiles)
+    parfor i = 1:numel(burstFullfiles)
         aBursts = struct();
         burstF = burstFullfiles{i};
         analysisFile = fullfile(analysisDir,[burstFiles{i} '_aligned.mat']);
@@ -49,8 +49,8 @@
         cellInfo = cellBursts.cellInfo;
         datafile = cellInfo.dataFile{1};
         sessionIndex = find(strcmp(alignTimesDbFilenames,datafile));
-        
-        for e = 3:3 %1:numel(alignEvents)
+        o = struct();
+        for e = 1:numel(alignEvents)
             eventName = alignEvents{e};
             alignTimes = alignTimesDb.(eventName){sessionIndex};
             aBursts.(['bobT_' eventName '_aligned']) = BurstUtils.alignForTrials(...
