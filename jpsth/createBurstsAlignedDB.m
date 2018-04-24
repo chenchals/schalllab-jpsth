@@ -9,10 +9,10 @@
     baseDir = '/mnt/teba';
 
     dataDir = fullfile(baseDir,'Users/Amir/Analysis/Mat_DataFiles');
-    burstDbDir = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis2/burstDB');
-    cellInfoDbFile = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis2/burstDB/CellInfoDB.mat');
-    trialEventTimesDbFile = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis2/burstDB/TrialEventTimesDB.mat');
-    analysisDir = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis2/burstAlignedDB');
+    burstDbDir = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis/burstDB');
+    cellInfoDbFile = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis/burstDB/CellInfoDB.mat');
+    trialEventTimesDbFile = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis/burstDB/TrialEventTimesDB.mat');
+    analysisDir = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis/burstAlignedDB2');
     
     %% Processing Logic %%
     if ~exist(analysisDir,'dir')
@@ -39,7 +39,7 @@
     % had to update code for cell 569 all bobT are NaN except 1
     % so bobT will be numeric and not a cell array, so convert to cell
     % array by calling num2cell in BurstUtils.alignForTrials
-    for i = 1:numel(burstFullfiles)
+    parfor i = 1:numel(burstFullfiles)
         burstF = burstFullfiles{i};
         analysisFile = fullfile(analysisDir,[burstFiles{i} '_aligned.mat']);
         fprintf('Aligning bursts for file %s\n',burstF);
@@ -59,6 +59,11 @@
             
             aBursts.(['spkTWin_' eventName '_aligned']) = BurstUtils.alignForTrials(...
                 cellBursts.spkTWin,'alignTimes',alignTimes);
+            
+            aBursts.(['isBursting_' eventName '_aligned']) = BurstUtils.convert2logical(...
+                aBursts.(['bobT_' eventName '_aligned']),...
+                aBursts.(['eobT_' eventName '_aligned']),...
+                cellBursts.timeWin);
             
         end
         % add other fields like number of dob (duration of burst etc)

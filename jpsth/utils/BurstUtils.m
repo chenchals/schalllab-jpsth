@@ -107,6 +107,9 @@ classdef BurstUtils
             else
                 error('Number of times in alignTimes must be 1 or equal to no of trials in burstTimes');
             end
+            % if there is  NaN or a NaN array replace empty
+            % leave [NaN 1 5 8] as is
+            outputArg(~cellfun(@any,outputArg))={[]};
             % Select trials, intentionally selecting AFTER alignment
             if numel(args.trials) > 0
                 outputArg = outputArg(args.trials);
@@ -151,9 +154,13 @@ classdef BurstUtils
         end
         
         function outputArg = convert2logical(bobT, eobT, timeWin)
-            
-            outputArg = cellfun(@(b,e) BurstUtils.burst2logical(b,e,timeWin), ...
-                                 bobT, eobT, 'UniformOutput', false);
+            if iscell(timeWin) && size(timeWin,1) == size(bobT,1)
+                outputArg = cellfun(@(b,e,t) BurstUtils.burst2logical(b,e,t), ...
+                    bobT, eobT, timeWin, 'UniformOutput', false);
+            else
+                outputArg = cellfun(@(b,e) BurstUtils.burst2logical(b,e,timeWin), ...
+                    bobT, eobT, 'UniformOutput', false);
+            end
         end
                 
         function saveOutput(oFile, resCellArray,varargin)
@@ -214,7 +221,10 @@ classdef BurstUtils
             %BURSTTIMES2RASTER Make a 0s and 1s vector for each pair of burst times
             %   Creates a zeros vector the  length of range of timeWin bins
             %   For every time-bin, add 1 if the time-bin is in burst duration
-            
+            if isempty(bobt)
+                outputArg = [];
+                return
+            end
             dTimeBins = min(timeWin):max(timeWin);
             bobt(isnan(bobt)) = timeWin(1);% replace nan with mn timeWin
             eobt(isnan(eobt)) = timeWin(2);% replace nan with max timeWin
