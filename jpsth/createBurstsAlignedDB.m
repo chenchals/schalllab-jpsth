@@ -40,6 +40,7 @@
     % so bobT will be numeric and not a cell array, so convert to cell
     % array by calling num2cell in BurstUtils.alignForTrials
     parfor i = 1:numel(burstFullfiles)
+        aBursts = struct();
         burstF = burstFullfiles{i};
         analysisFile = fullfile(analysisDir,[burstFiles{i} '_aligned.mat']);
         fprintf('Aligning bursts for file %s\n',burstF);
