@@ -77,6 +77,7 @@ classdef BurstUtils
                 end
             end
         end
+                
         
         function outputArg = alignForTrials(burstTimes, varargin)
             % ALIGNFORTRIALS
@@ -107,9 +108,8 @@ classdef BurstUtils
             else
                 error('Number of times in alignTimes must be 1 or equal to no of trials in burstTimes');
             end
-            % if there is  NaN or a NaN array replace empty
-            % leave [NaN 1 5 8] as is
-            outputArg(~cellfun(@any,outputArg))={[]};
+            % if all elements of an array is  NaN replace with empty
+            outputArg(cellfun(@(x) sum(isnan(x))==numel(x),outputArg))={[]};
             % Select trials, intentionally selecting AFTER alignment
             if numel(args.trials) > 0
                 outputArg = outputArg(args.trials);
@@ -220,7 +220,7 @@ classdef BurstUtils
         function [ outputArg ] = burst2logical( bobt, eobt, timeWin )
             %BURSTTIMES2RASTER Make a 0s and 1s vector for each pair of burst times
             %   Creates a zeros vector the  length of range of timeWin bins
-            %   For every time-bin, add 1 if the time-bin is in burst duration
+            %   For every time-bin, add 1 if the time-bin is in burst duration            
             if isempty(bobt)
                 outputArg = [];
                 return

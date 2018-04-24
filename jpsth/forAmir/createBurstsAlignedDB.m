@@ -39,7 +39,7 @@
     % had to update code for cell 569 all bobT are NaN except 1
     % so bobT will be numeric and not a cell array, so convert to cell
     % array by calling num2cell in BurstUtils.alignForTrials
-    parfor i = 1:numel(burstFullfiles)
+    for i = 1:numel(burstFullfiles)
         aBursts = struct();
         burstF = burstFullfiles{i};
         analysisFile = fullfile(analysisDir,[burstFiles{i} '_aligned.mat']);
@@ -50,7 +50,7 @@
         datafile = cellInfo.dataFile{1};
         sessionIndex = find(strcmp(alignTimesDbFilenames,datafile));
         
-        for e = 1:numel(alignEvents)
+        for e = 3:3 %1:numel(alignEvents)
             eventName = alignEvents{e};
             alignTimes = alignTimesDb.(eventName){sessionIndex};
             aBursts.(['bobT_' eventName '_aligned']) = BurstUtils.alignForTrials(...
@@ -61,10 +61,13 @@
             aBursts.(['spkTWin_' eventName '_aligned']) = BurstUtils.alignForTrials(...
                 cellBursts.spkTWin,'alignTimes',alignTimes);
             
+            alignedTimeWins = cellfun(@(x,y) x-y, cellBursts.timeWin,...
+                              num2cell(alignTimes), 'UniformOutput', false);
+            
             aBursts.(['isBursting_' eventName '_aligned']) = BurstUtils.convert2logical(...
                 aBursts.(['bobT_' eventName '_aligned']),...
                 aBursts.(['eobT_' eventName '_aligned']),...
-                cellBursts.timeWin);
+                alignedTimeWins);
             
         end
         % add other fields like number of dob (duration of burst etc)
