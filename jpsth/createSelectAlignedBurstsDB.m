@@ -12,7 +12,7 @@
     burstAlignedDbDir = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis2/burstAlignedDB');
     cellInfoDbFile = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis2/burstAlignedDB/CellInfoDB.mat');
     trialEventTimesDbFile = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis2/burstAlignedDB/TrialEventTimesDB.mat');
-    analysisDir = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis2/burstAlignedTimeWindowDB');
+    analysisDir = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis2/burstAlignedTimeWindowDB2');
     
     % Aligning event time windows to use
     alignEventTimeWin.Reward = [-800 500];
@@ -43,10 +43,10 @@
     % had to update code for cell 569 all bobT are NaN except 1
     % so bobT will be numeric and not a cell array, so convert to cell
     % array by calling num2cell in BurstUtils.alignForTrials
-    for ii = 1:numel(burstFullfiles)
+    parfor ii = 1:numel(burstFullfiles)
         tic
         burstF = burstFullfiles{ii};
-        analysisFile = fullfile(analysisDir,[burstFiles{ii} '_aligned_timeWin.mat']);
+        analysisFile = fullfile(analysisDir,[burstFiles{ii} '_timeWin.mat']);
         fprintf('Aligning bursts for file %s\n',burstF);
         % Load burst file
         burstData = load(burstF);        
@@ -71,6 +71,7 @@
              o.(oFn).eobT = temp.eobs;
              o.(oFn).spkTWin = cellfun(@(x) x(x>=twin(1) & x<=twin(2)),...
                        burstData.(spkTWinFn),'UniformOutput',false);
+             o.(oFn).isBursting = BurstUtils.convert2logical(temp.bobs,temp.eobs,twin);      
              % prune other fields from cellBurst data
              bothIndices = temp.bothBobAndEobInds;
              for j = 1:numel(bothIndices)
@@ -111,7 +112,7 @@
         saveFile(analysisFile, o);
 
         fprintf('wrote file %s\n\n',analysisFile);
-        clearvars o fns 
+        %clearvars o fns 
         toc
     end
 

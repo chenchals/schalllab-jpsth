@@ -79,7 +79,7 @@ classdef BurstUtils
         end
         
         function outputArg = alignForTrials(burstTimes, varargin)
-            % ALIGNFORTRIALS 
+            % ALIGNFORTRIALS
             %      burstTimes: must be a cell array, if not is converted to
             %                 cell array
             
@@ -87,8 +87,8 @@ classdef BurstUtils
                 'trials', [] @isnumeric};
             % This is more complicated... what if burst spans the begining
             % or end of timeWin?
-           %'timeWin', [], @(x) isnumeric(x) && numel(x)==2 && diff(x)>0,...
-
+            %'timeWin', [], @(x) isnumeric(x) && numel(x)==2 && diff(x)>0,...
+            
             argParser = BurstUtils.createArgParser(defaultArgs);
             if ~isempty(varargin)
                 argParser.parse(varargin{:});
@@ -102,7 +102,7 @@ classdef BurstUtils
             if numel(args.alignTimes)==1
                 outputArg = cellfun(@(b) b-args.alignTimes, burstTimes,'UniformOutput', false);
             elseif numel(args.alignTimes) == size(burstTimes,1)
-                alignTimes = arrayfun(@(x) {x}, args.alignTimes);                
+                alignTimes = arrayfun(@(x) {x}, args.alignTimes);
                 outputArg = cellfun(@(b,t) b-t, burstTimes, alignTimes, 'UniformOutput', false);
             else
                 error('Number of times in alignTimes must be 1 or equal to no of trials in burstTimes');
@@ -110,7 +110,7 @@ classdef BurstUtils
             % Select trials, intentionally selecting AFTER alignment
             if numel(args.trials) > 0
                 outputArg = outputArg(args.trials);
-            end            
+            end
         end
         
         % in Progress....
@@ -120,16 +120,16 @@ classdef BurstUtils
             % bt=-100:10:100;bobT=num2cell(bt(1:2:end-1));eobT=num2cell(bt(2:2:end));
             
             assert(isnumeric(timeWin) && numel(timeWin)==2 && diff(timeWin) > 0,...
-                    'timeWin must be a 2-element vector of doubles with diff > 0');
-                
+                'timeWin must be a 2-element vector of doubles with diff > 0');
+            
             bobInd = cellfun(@(x) find(x>=timeWin(1) & x<=timeWin(2)), bobT, 'UniformOutput', false);
             eobInd = cellfun(@(x) find(x>=timeWin(1) & x<=timeWin(2)), eobT, 'UniformOutput', false);
             % Time window includes (bobT, eobT) for all bursts
-            commonInds = cellfun(@(b,e) intersect(b,e), bobInd, eobInd, 'UniformOutput', false); 
+            commonInds = cellfun(@(b,e) intersect(b,e), bobInd, eobInd, 'UniformOutput', false);
             % TimWin has eobT, without bobT, first bobT is before TimeWin
             nanBobInds = find(cell2mat(cellfun(@(b,e) numel(setdiff(e,b)), bobInd, eobInd, 'UniformOutput', false)));
             % TimeWin has bobT, without eobT last eobT is after TimeWin
-            nanEobInds = find(cell2mat(cellfun(@(b,e) numel(setdiff(b,e)), bobInd, eobInd, 'UniformOutput', false)));            
+            nanEobInds = find(cell2mat(cellfun(@(b,e) numel(setdiff(b,e)), bobInd, eobInd, 'UniformOutput', false)));
             % get all common
             bobs = cellfun(@(b,i) b(i), bobT, bobInd,'UniformOutput',false);
             eobs = cellfun(@(e,i) e(i), eobT, eobInd,'UniformOutput',false);
@@ -141,7 +141,7 @@ classdef BurstUtils
             for j = 1:numel(nanEobInds)
                 eobs{nanEobInds(j)} = [eobs{nanEobInds(j)} NaN];
             end
-
+            
             outputArg.bobs = bobs;
             outputArg.eobs = eobs;
             outputArg.bothBobAndEobInds = commonInds;
@@ -150,7 +150,12 @@ classdef BurstUtils
             
         end
         
-        
+        function outputArg = convert2logical(bobT, eobT, timeWin)
+            
+            outputArg = cellfun(@(b,e) BurstUtils.burst2logical(b,e,timeWin), ...
+                                 bobT, eobT, 'UniformOutput', false);
+        end
+                
         function saveOutput(oFile, resCellArray,varargin)
             % SAVEOUTPUT Saves output of burst analysis for a single unit
             % varargin:
@@ -193,16 +198,31 @@ classdef BurstUtils
     methods (Static, Access=private)
         
         function argParser = createArgParser(varargin)
-           argParser = inputParser();
-           args = varargin{1};
-           if numel(args) == 0 || mod(numel(args),3)==1
-               error(['When creating argParser the no. of argumets must be greater than zero '...
-                   'and must be EVEN corresponding to key-value pairs, where value is the default value']);
-           end
-           for  i = 1:3:numel(args)
-               argParser.addParameter(args{i},args{i+1},args{i+2});
-           end
-           argParser.parse();
+            argParser = inputParser();
+            args = varargin{1};
+            if numel(args) == 0 || mod(numel(args),3)==1
+                error(['When creating argParser the no. of argumets must be greater than zero '...
+                    'and must be EVEN corresponding to key-value pairs, where value is the default value']);
+            end
+            for  i = 1:3:numel(args)
+                argParser.addParameter(args{i},args{i+1},args{i+2});
+            end
+            argParser.parse();
+        end
+        
+        function [ outputArg ] = burst2logical( bobt, eobt, timeWin )
+            %BURSTTIMES2RASTER Make a 0s and 1s vector for each pair of burst times
+            %   Creates a zeros vector the  length of range of timeWin bins
+            %   For every time-bin, add 1 if the time-bin is in burst duration
+            
+            dTimeBins = min(timeWin):max(timeWin);
+            bobt(isnan(bobt)) = timeWin(1);% replace nan with mn timeWin
+            eobt(isnan(eobt)) = timeWin(2);% replace nan with max timeWin
+            burstTimes = arrayfun(@(b,e) find(dTimeBins>=b & dTimeBins<=e),bobt,eobt,'UniformOutput',false);
+            burstTimes = [burstTimes{:}];
+            outputArg = false(1,numel(dTimeBins));
+            outputArg(burstTimes) = true;
+            
         end
         
     end
