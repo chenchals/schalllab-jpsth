@@ -9,10 +9,10 @@
     baseDir = '/mnt/teba';
 
     dataDir = fullfile(baseDir,'Users/Amir/Analysis/Mat_DataFiles');
-    burstDbDir = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis/burstDB');
-    cellInfoDbFile = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis/burstDB/CellInfoDB.mat');
-    trialEventTimesDbFile = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis/burstDB/TrialEventTimesDB.mat');
-    analysisDir = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis/burstAlignedDB2');
+    burstDbDir = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis2/burstDB');
+    cellInfoDbFile = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis2/burstDB/CellInfoDB.mat');
+    trialEventTimesDbFile = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis2/burstDB/TrialEventTimesDB.mat');
+    analysisDir = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis2/burstAlignedDB');
     
     %% Processing Logic %%
     if ~exist(analysisDir,'dir')

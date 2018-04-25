@@ -1,5 +1,5 @@
 baseDir = '/Volumes/schalllab';
-analysisDir = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis/burstAlignedTimeWindowDB');
+analysisDir = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis/burstAlignedTimeWindowDB2');
 temp = load(fullfile(analysisDir, 'TrialTypesDB.mat'));
 trialTypes = temp.ttx;
 clear temp;

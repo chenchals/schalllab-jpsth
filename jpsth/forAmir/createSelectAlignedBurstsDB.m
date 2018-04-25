@@ -12,7 +12,7 @@
     burstAlignedDbDir = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis2/burstAlignedDB');
     cellInfoDbFile = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis2/burstAlignedDB/CellInfoDB.mat');
     trialEventTimesDbFile = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis2/burstAlignedDB/TrialEventTimesDB.mat');
-    analysisDir = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis2/burstAlignedTimeWindowDB2');
+    analysisDir = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis2/burstAlignedTimeWindowDB');
     
     % Aligning event time windows to use
     alignEventTimeWin.Reward = [-800 500];
