@@ -220,17 +220,24 @@ classdef BurstUtils
         function [ outputArg ] = burst2logical( bobt, eobt, timeWin )
             %BURSTTIMES2RASTER Make a 0s and 1s vector for each pair of burst times
             %   Creates a zeros vector the  length of range of timeWin bins
-            %   For every time-bin, add 1 if the time-bin is in burst duration    
+            %   For every time-bin, add 1 if the time-bin is in burst duration  
+            
             dTimeBins = min(timeWin):max(timeWin);
             outputArg = false(1,numel(dTimeBins));
-            if isempty(bobt)
+            % If there are no bursts in a trial
+            if isempty(bobt) || (numel(bobt)==1 && isnan(bobt))
                 return
             end
+            % BOB is before the timeWin
             bobt(isnan(bobt)) = timeWin(1);% replace nan with mn timeWin
+            % EOB is after the timeWin
             eobt(isnan(eobt)) = timeWin(2);% replace nan with max timeWin
+
             burstTimes = arrayfun(@(b,e) find(dTimeBins>=b & dTimeBins<=e),bobt,eobt,'UniformOutput',false);
+
             burstTimes = [burstTimes{:}];
             outputArg(burstTimes) = true;
+            
             
         end
         
