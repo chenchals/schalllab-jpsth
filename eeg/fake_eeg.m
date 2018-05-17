@@ -14,14 +14,14 @@ minT = 0;
 maxT = 1;
 sampleRate = 1000;
 ts = linspace(minT,maxT,sampleRate*maxT);
-randomizePhase = false;
+randomizePhase = true;
 % random phase difference times
 % when starting at 0 deg phase, peaks of sine waves
 % pd = 1./Fs; %period of sine waves
 % peaksAt = pd./1; % in seconds
 % t = t - peaksAt;
 if randomizePhase
-    t = arrayfun(@(x) randsample(ts,length(ts)),(1:nSines)','UniformOutput',false);
+    t = arrayfun(@(x) randsample(ts,length(ts)),(1:nSines)','UniformOutput',false); 
     t = cell2mat(t);
 else
     t = repmat(ts,nSines,1);
