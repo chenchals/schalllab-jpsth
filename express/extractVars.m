@@ -27,7 +27,7 @@ for j = 1:2
     end
     monkDat(size(currMonk,1),1) = struct();
     % for each row in the table:
-    parfor i = 1:10 %size(currMonk,1)
+    parfor i = 1:size(currMonk,1)
         loc = currMonk.location{i};
         loc = regexprep(regexprep(loc,'^[A-Z]\:', drive),'\',filesep);
         f = fullfile(loc,currMonk.filename{i});
