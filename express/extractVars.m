@@ -20,8 +20,10 @@ vars = vars2load();
 for j = 1:2
     if j==1
         currMonk = monkH;
+        searchDir = fullfile(drive,'data','Hoagie');
     else
         currMonk = monkF;
+        searchDir = fullfile(drive,'data','Fechner');
     end
     monkDat(size(currMonk,1),1) = struct();
     % for each row in the table:
@@ -29,10 +31,17 @@ for j = 1:2
         loc = currMonk.location{i};
         loc = regexprep(regexprep(loc,'^[A-Z]\:', drive),'\',filesep);
         f = fullfile(loc,currMonk.filename{i});
+        monkDat(i).file = f;
+        monkDat(i).fileExists = true;
+        monkDat(i).relocFile = '';
+        if ~exist(f,'file')
+            monkDat(i).fileExists = false;
+            f = searchFile(searchDir,f);
+            monkDat(i).relocFile = '';
+        end
         fprintf('Loading file : %s\n',f);
         if exist(f,'file')
             dataVars = load(f,'-mat',vars{:});
-            monkDat(i).file = f;
             monkDat(i).fileExists = true;
             targTime  = dataVars.Target_(:,1);
             saccTime = dataVars.Sacc_of_interest(:,1);
@@ -42,8 +51,6 @@ for j = 1:2
                 monkDat(i).(varName) = loadVariable(dataVars,varName);
             end
         else
-            monkDat(i).file = f;
-            monkDat(i).fileExists = false;
             monkDat(i).rt =[];
             for v = 1:numel(vars)
                 varName = vars{v};
