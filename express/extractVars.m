@@ -27,22 +27,21 @@ for j = 1:2
     end
     monkDat(size(currMonk,1),1) = struct();
     % for each row in the table:
-    parfor i = 1:size(currMonk,1)
+    parfor i = 1:10 %size(currMonk,1)
         loc = currMonk.location{i};
         loc = regexprep(regexprep(loc,'^[A-Z]\:', drive),'\',filesep);
         f = fullfile(loc,currMonk.filename{i});
+        fprintf('Processing file : %s\n',f);
         monkDat(i).file = f;
         monkDat(i).fileExists = true;
         monkDat(i).relocFile = '';
         if ~exist(f,'file')
             monkDat(i).fileExists = false;
             f = searchFile(searchDir,f);
-            monkDat(i).relocFile = '';
+            monkDat(i).relocFile = f;
         end
-        fprintf('Loading file : %s\n',f);
         if exist(f,'file')
             dataVars = load(f,'-mat',vars{:});
-            monkDat(i).fileExists = true;
             targTime  = dataVars.Target_(:,1);
             saccTime = dataVars.Sacc_of_interest(:,1);
             monkDat(i).rt = saccTime - targTime;           
