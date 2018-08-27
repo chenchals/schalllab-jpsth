@@ -10,9 +10,9 @@
 %     cellInfoDbFile = 'data/Analysis/burstDB/cellInfoDB.mat';
 %     analysisDir = 'data/Analysis/burstDB';
 % On Teba
-    significance = 1E-20;
+    significance = 1E-5;
     dataDir ='/mnt/teba/Users/Amir/Analysis/Mat_DataFiles';
-    analysisDir = '/mnt/teba/Users/Chenchal/Legendy/Bursts_Surp_20/burstDB';
+    analysisDir = '/mnt/teba/Users/Chenchal/Legendy/Bursts_Signif_1E_minus_05/burstDB';
     cellInfoDbFile = fullfile(analysisDir,'CellInfoDB.mat');
     % Load cell inforamation database table
     temp = load(cellInfoDbFile);

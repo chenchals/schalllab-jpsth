@@ -1,6 +1,6 @@
 
-baseDir = '/Volumes/schalllab';
-analysisDir = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis2/burstAlignedTimeWindowDB');
+baseDir = '/mnt/teba/Users/Chenchal/Legendy/Bursts_Signif_1E_minus_05';
+analysisDir = fullfile(baseDir,'burstAlignedTimeWindowDB');
 temp = load(fullfile(analysisDir, 'CellInfoDB.mat'));
 cellInfoDB = temp.CellInfoDB;
 nCells = size(cellInfoDB,1);
@@ -35,6 +35,7 @@ sessionCellIndices = arrayfun(@(x) find(cellInfoDB.SessionNo==x),sessionNo,'Unif
 
 bySessions = cell(numel(sessionNo),numel(alignedFns));
 for s = 1:numel(sessionCellIndices)
+    fprintf('Rearranging by Session for session# %d of %d\n',s,numel(sessionCellIndices));
     cellNos = sessionCellIndices{s};
     nCellsInSession = numel(cellNos);
     for f = 1:numel(alignedFns)
@@ -57,7 +58,8 @@ for s = 1:numel(sessionNo)
         sOut.(alignedFns{i}) = sVar{:,i};
     end
     sOut.alignEventTimeWin=alignEventTimeWin;
-%    save(oFile,'-v7.3','-struct','sOut');   
+    fprintf('Saving by Session for session# %d of %d\noFile = %s\n\n',s,numel(sessionNo), oFile);
+    save(oFile,'-v7.3','-struct','sOut');   
 end
 
 

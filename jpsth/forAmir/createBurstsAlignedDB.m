@@ -6,7 +6,7 @@
 %
 % See also CREATEBURSTSDB, CREATETRIALEVENTTIMES, TRIALEVENTTIMESCALCULATOR
 
-    baseDir = '/mnt/teba/Users/Chenchal/Legendy/Bursts_Surp_20';
+    baseDir = '/mnt/teba/Users/Chenchal/Legendy/Bursts_Signif_1E_minus_05';
 
     dataDir = fullfile('/mnt/teba','Users/Amir/Analysis/Mat_DataFiles');
     burstDbDir = fullfile(baseDir,'burstDB');
