@@ -71,8 +71,9 @@ MaxXT=opts.maxExtraTime; % 30;%Max Xtra Time
 MaxXS=opts.maxExtraSpikes;% 10;%Max Xtra Spikes
 MinSPInBurst=opts.minSpikesInBurst;% 2;%Minimum spkes in a Burst
 Anchor=opts.anchorTime; %50;%Anchor Time
-
-Signif=0.05;UserSI=-log(Signif);
+Significance=opts.Significance;
+opts.UserSI=-log(Significance);
+UserSI=opts.UserSI;
 Tol=1e-300;
 if opts.jitterSpikeTimes
     jitterForSimultaneousSpikes = 1e-20;
@@ -461,6 +462,7 @@ function [ args ] = parseInputArgs(varargin)
    argParser.addParameter('anchorTime', 50); % default
    argParser.addParameter('plotBursts', false); % default  
    argParser.addParameter('useGpu', false); % default  
+   argParser.addParameter('Significance', 0.05); % default  
    argParser.parse();
    if ~isempty(varargin{1})
       argParser.parse(varargin{1}{:});

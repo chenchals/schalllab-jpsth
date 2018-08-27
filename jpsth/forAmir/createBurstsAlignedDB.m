@@ -6,13 +6,13 @@
 %
 % See also CREATEBURSTSDB, CREATETRIALEVENTTIMES, TRIALEVENTTIMESCALCULATOR
 
-    baseDir = '/mnt/teba';
+    baseDir = '/mnt/teba/Users/Chenchal/Legendy/Bursts_Surp_20';
 
-    dataDir = fullfile(baseDir,'Users/Amir/Analysis/Mat_DataFiles');
-    burstDbDir = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis2/burstDB');
-    cellInfoDbFile = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis2/burstDB/CellInfoDB.mat');
-    trialEventTimesDbFile = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis2/burstDB/TrialEventTimesDB.mat');
-    analysisDir = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis2/burstAlignedDB');
+    dataDir = fullfile('/mnt/teba','Users/Amir/Analysis/Mat_DataFiles');
+    burstDbDir = fullfile(baseDir,'burstDB');
+    cellInfoDbFile = fullfile(burstDbDir,'CellInfoDB.mat');
+    trialEventTimesDbFile = fullfile(burstDbDir,'TrialEventTimesDB.mat');
+    analysisDir = fullfile(baseDir,'burstAlignedDB');
     
     %% Processing Logic %%
     if ~exist(analysisDir,'dir')

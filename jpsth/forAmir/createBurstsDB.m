@@ -10,9 +10,10 @@
 %     cellInfoDbFile = 'data/Analysis/burstDB/cellInfoDB.mat';
 %     analysisDir = 'data/Analysis/burstDB';
 % On Teba
+    significance = 1E-20;
     dataDir ='/mnt/teba/Users/Amir/Analysis/Mat_DataFiles';
-    cellInfoDbFile = '/mnt/teba/Users/Amir/0-chenchal/BurstAnalysis2/burstDB/CellInfoDB.mat';
-    analysisDir = '/mnt/teba/Users/Amir/0-chenchal/BurstAnalysis2/burstDB';
+    analysisDir = '/mnt/teba/Users/Chenchal/Legendy/Bursts_Surp_20/burstDB';
+    cellInfoDbFile = fullfile(analysisDir,'CellInfoDB.mat');
     % Load cell inforamation database table
     temp = load(cellInfoDbFile);
     CellInfoDB = temp.CellInfoDB;
@@ -28,7 +29,7 @@
         fprintf('Analyzing bursts for \n');
         disp(cellInfo);
         [spkTimes, timeWins] = getSpikeTimesByTrials(datafile,cellId);
-        oBursts = BurstUtils.detectBursts(spkTimes,timeWins);
+        oBursts = BurstUtils.detectBursts(spkTimes,timeWins,'Significance', significance);
         BurstUtils.saveOutput(analysisFile,oBursts,'cellInfo',cellInfo);
         fprintf('wrote file %s\n\n',analysisFile);
     end

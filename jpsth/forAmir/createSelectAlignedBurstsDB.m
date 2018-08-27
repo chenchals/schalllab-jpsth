@@ -6,14 +6,14 @@
 %
 % See also CREATEBURSTSDB, CREATETRIALEVENTTIMES, TRIALEVENTTIMESCALCULATOR
 
-    baseDir = '/mnt/teba';
+    baseDir = '/mnt/teba/Users/Chenchal/Legendy/Bursts_Surp_20';
 
-    dataDir = fullfile(baseDir,'Users/Amir/Analysis/Mat_DataFiles');
-    burstAlignedDbDir = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis2/burstAlignedDB');
-    cellInfoDbFile = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis2/burstAlignedDB/CellInfoDB.mat');
-    trialEventTimesDbFile = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis2/burstAlignedDB/TrialEventTimesDB.mat');
-    analysisDir = fullfile(baseDir,'Users/Amir/0-chenchal/BurstAnalysis2/burstAlignedTimeWindowDB');
-    
+    dataDir = fullfile('/mnt/teba','Users/Amir/Analysis/Mat_DataFiles');
+    burstAlignedDbDir = fullfile(baseDir,'burstAlignedDB');
+    cellInfoDbFile = fullfile(burstAlignedDbDir,'CellInfoDB.mat');
+    trialEventTimesDbFile = fullfile(burstAlignedDbDir,'TrialEventTimesDB.mat');
+    analysisDir = fullfile(baseDir,'burstAlignedTimeWindowDB');
+        
     % Aligning event time windows to use
     alignEventTimeWin.Reward = [-800 500];
     alignEventTimeWin.Tone = [-800 800];
@@ -45,6 +45,7 @@
     % array by calling num2cell in BurstUtils.alignForTrials
     parfor ii = 1:numel(burstFullfiles)
         tic
+        o = struct();
         burstF = burstFullfiles{ii};
         analysisFile = fullfile(analysisDir,[burstFiles{ii} '_timeWin.mat']);
         fprintf('Aligning bursts for file %s\n',burstF);

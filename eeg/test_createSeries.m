@@ -13,4 +13,3 @@ function [ t, y, components ] = test_createSeries(maxTime, frequencies, amplitud
  y = sum(components,2);
  
 end
-
