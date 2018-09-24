@@ -14,7 +14,7 @@
     for ss = 1:numel(signifs)
 
         significance = signifs(ss);
-        signifDir = strrep(num2str(significance,'Bursts_Signif_%1.0E'),'-','_minus_');
+        signifDir = strrep(num2str(significance,'Bursts_Signif_%0.0E'),'-','_minus_');
         dataDir ='/mnt/teba/Users/Amir/Analysis/Mat_DataFiles';
         analysisDir = fullfile('/mnt/teba/Users/Chenchal/Legendy',signifDir,'burstDB');
         cellInfoDbFile = fullfile(analysisDir,'CellInfoDB.mat');
