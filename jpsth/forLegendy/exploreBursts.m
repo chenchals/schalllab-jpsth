@@ -1,16 +1,21 @@
 
 %% List mat files created for analyzing bursts
 baseDir = '/Volumes/schalllab/Users/Chenchal/Legendy';
-signfFolders = getFullPaths([baseDir filesep 'Bursts_Signif_*']);
-burstFiles = cellfun(@(x) getFullPaths([x filesep 'burstDB' filesep 'UID*']),signfFolders,'UniformOutput',false);
-burstAlignedFiles = cellfun(@(x) getFullPaths([x filesep 'burstDB' filesep 'UID*']),signfFolders,'UniformOutput',false);
-burstAlignedTimeWindowFiles = cellfun(@(x) getFullPaths([x filesep 'burstDB' filesep 'UID*']),signfFolders,'UniformOutput',false);
+signfFolders = getFullpaths([baseDir filesep 'Bursts_Signif_*']);
+burstFiles = cellfun(@(x) getFullpaths([x filesep 'burstDB' filesep 'UID*']),signfFolders,'UniformOutput',false);
+burstAlignedFiles = cellfun(@(x) getFullpaths([x filesep 'burstDB' filesep 'UID*']),signfFolders,'UniformOutput',false);
+burstAlignedTimeWindowFiles = cellfun(@(x) getFullpaths([x filesep 'burstDB' filesep 'UID*']),signfFolders,'UniformOutput',false);
 %% Plot bursts over PSTH for different Surprise levels
-
-
-
-%% Sub-functions
-function [ out ] = getFullPaths(pathPattern)
-    d = dir(pathPattern);
-    out = strcat({d.folder}', filesep, {d.name}');
+currGroup = burstFiles;
+si = cell(575,5);
+for gr = 3:numel(currGroup)
+    currFiles = currGroup{gr};
+    for f = 1:numel(currFiles)
+       sob = load(currFiles{f},'sob');
+       sob=cellfun(@(x) x(:)',sob.sob,'UniformOutput',false);
+       sob = [sob{:}];
+       si{f,gr} = sob(~isnan(sob));
+      
+    end
 end
+

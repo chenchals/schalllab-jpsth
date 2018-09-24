@@ -71,7 +71,10 @@ MaxXT=opts.maxExtraTime; % 30;%Max Xtra Time
 MaxXS=opts.maxExtraSpikes;% 10;%Max Xtra Spikes
 MinSPInBurst=opts.minSpikesInBurst;% 2;%Minimum spkes in a Burst
 Anchor=opts.anchorTime; %50;%Anchor Time
+% Probability of burst
 Significance=opts.Significance;
+% Use natural ln() of probability, e.g.
+% ln(0.01) = 4.61, i.e., 0.01 probability
 opts.UserSI=-log(Significance);
 UserSI=opts.UserSI;
 Tol=1e-300;
