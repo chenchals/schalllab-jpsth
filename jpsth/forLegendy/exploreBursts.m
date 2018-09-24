@@ -1,6 +1,7 @@
 
 %% List mat files created for analyzing bursts
-baseDir = '/Volumes/schalllab/Users/Chenchal/Legendy';
+rootDir = '/mnt/teba'; %'/Volumes/schalllab' '/Users/Chenchal/Legendy';
+baseDir = fullfile(rootDir,'Users/Chenchal/Legendy');
 signfFolders = getFullpaths([baseDir filesep 'Bursts_Signif_*']);
 burstFiles = cellfun(@(x) getFullpaths([x filesep 'burstDB' filesep 'UID*']),signfFolders,'UniformOutput',false);
 burstAlignedFiles = cellfun(@(x) getFullpaths([x filesep 'burstDB' filesep 'UID*']),signfFolders,'UniformOutput',false);

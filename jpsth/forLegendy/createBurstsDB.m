@@ -10,13 +10,24 @@
 %     cellInfoDbFile = 'data/Analysis/burstDB/cellInfoDB.mat';
 %     analysisDir = 'data/Analysis/burstDB';
 % On Teba
-    signifs = [1E-15; 1E-20];
+    rootDir = '/mnt/teba';
+    burstBaseDir = fullfile(rootDir,'Users/Chenchal/Legendy','burstBase'); % contains cellinfoDb etc
+    %signifs = [5E-02; 1E-02; 1E-12; 1E-14; 1E-15; 1E-20];
+    signifs = [0.05, 10.^-(2:5),10.^-(6:2:16)]';
     for ss = 1:numel(signifs)
-
         significance = signifs(ss);
-        signifDir = strrep(num2str(significance,'Bursts_Signif_%0.0E'),'-','_minus_');
-        dataDir ='/mnt/teba/Users/Amir/Analysis/Mat_DataFiles';
-        analysisDir = fullfile('/mnt/teba/Users/Chenchal/Legendy',signifDir,'burstDB');
+        signifDir = strrep(num2str(significance,'Burst_Prob_%0.0E'),'-','_minus_');
+        dataDir =fullfile(rootDir, 'Users/Amir/Analysis/Mat_DataFiles');
+        analysisDir = fullfile(rootDir,'Users/Chenchal/Legendy',signifDir,'burstDB');
+        if ~exist(analysisDir, 'dir')
+            mkdir(analysisDir);
+            [success, msg, msdId] = copyfile(fullfile(burstBaseDir,'*.mat'),fullfile(analysisDir,'.'),'f');
+            if ~success % bail
+                msg
+                msgId
+                error('Unable to coy files into analysisDir');               
+            end
+        end
         cellInfoDbFile = fullfile(analysisDir,'CellInfoDB.mat');
         % Load cell inforamation database table
         temp = load(cellInfoDbFile);
