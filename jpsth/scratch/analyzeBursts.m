@@ -37,7 +37,7 @@ groups = {'units', 'channelUnits', 'layerUnits'};
 % prune spkTimes . ?
 spkTimesTrials = origSpkTimes(trials,:);
 results = struct();
-for g = 1:3 %numel(groups)
+for g = 1:1 %numel(groups)
     
     clearvars prefix units2Use allPsth allPsthPsp psthBins allRasters rasterBins temp allBursts pltRows pltCols
     
@@ -76,10 +76,10 @@ for g = 1:3 %numel(groups)
     end
     
     % aggregate by channels
-    spkTimes = SpikeFx.groupSpikeTimes(spkTimesTrials, units2Use);
+    spkTimes = SpikeUtils.groupSpikeTimes(spkTimesTrials, units2Use);
     
     % All Rasters
-    temp = arrayfun(@(x) SpikeFx.rasters(spkTimes(:,x),timeWin),...
+    temp = arrayfun(@(x) SpikeUtils.rasters(spkTimes(:,x),timeWin),...
         1:size(spkTimes,2),'UniformOutput',false);
     allRasters = cellfun(@(x) x.rasters,temp,'UniformOutput',false);
     rasterBins = temp{1}.rasterBins;
@@ -87,20 +87,20 @@ for g = 1:3 %numel(groups)
     
     % All PSTHs
     psthBinWidth = 1;
-    temp = arrayfun(@(x) SpikeFx.psth(spkTimes(:,x),psthBinWidth,timeWin,@nanmean),1:size(spkTimes,2),'UniformOutput',false);
+    temp = arrayfun(@(x) SpikeUtils.psth(spkTimes(:,x),psthBinWidth,timeWin,@nanmean),1:size(spkTimes,2),'UniformOutput',false);
     allPsth =  cellfun(@(x) x.psth,temp,'UniformOutput',false);
     psthBins = temp{1}.psthBins;
-    allPsthPsp = cellfun(@(x) convn(x',SpikeFx.pspKernel,'same')',allPsth,'UniformOutput',false);
+    allPsthPsp = cellfun(@(x) convn(x',SpikeUtils.pspKernel,'same')',allPsth,'UniformOutput',false);
     clearvars temp
     
     % Compute bursts
     plotProgress = 0;
     fprintf('Running burst detector...\n')
     %allBursts = cell(nTrials,numel(idsToUse));
-    parfor c = 1:size(spkTimes,2)
+    for c = 1:size(spkTimes,2)
         fprintf('%02d/%02d\n',c,size(spkTimes,2));
         x = spkTimes(:,c);
-        allBursts(:,c) = SpikeFx.burstAnalysis(x,timeWin,plotProgress);
+        allBursts(:,c) = BurstUtils.detectBursts(x,timeWin);
     end
     fprintf('done\n')
     plotResults(titles, allPsthPsp, psthBins, allRasters, rasterBins, allBursts, pltRows, pltCols);
@@ -118,6 +118,17 @@ for g = 1:3 %numel(groups)
     results(g).allRasters = allRasters;
     results(g).rasterBins = rasterBins;
     results(g).allBursts = allBursts;
+    
+    % further burst analysis
+    fx_t = @(fn,cellBursts) cellfun(@(x) x.(fn),cellBursts,'UniformOutput',false);     
+    for c = 1:size(allBursts,2)
+        currBursts = allBursts(:,c);
+        allBurstHists(:,c) = BurstUtils.psbh(fx_t('bobT',currBursts),fx_t('eobT',currBursts),timeWin);
+    end
+   
+    results(g).allBurstHists = allBurstHists;
+    
+    
 end
 end
 
@@ -133,9 +144,9 @@ figure
 for cellId = 1:numel(titles)
     currTitle = titles{cellId};
     subplot(plotRows,plotCols,cellId);
-    SpikeFx.plotPsth(psthAllGroups{cellId}, psthTimes,maxFrRound);
+    PlotUtils.plotPsth(psthAllGroups{cellId}, psthTimes,maxFrRound);
     hold on
-    SpikeFx.plotRastersAndBursts(rastersAllGroups{cellId},rasterTimes,bobT(:,cellId),eobT(:,cellId));
+    PlotUtils.plotRastersAndBursts(rastersAllGroups{cellId},rasterTimes,bobT(:,cellId),eobT(:,cellId));
     hold off
     title(currTitle);
     xlabel('Saccade aligned');

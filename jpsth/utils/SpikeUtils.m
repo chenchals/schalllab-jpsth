@@ -1,11 +1,10 @@
-classdef SpikeFx
-    %SPIKEFX Summary of this class goes here
-    %   Detailed explanation goes here
+classdef SpikeUtils
+    %SPIKEUTILS Non-stateful spike utilities
+    %   All methods are static. Computation state/results are not stored.
+    %   All method calls will have to use classname prefix
+    %
     
-    properties
-    end
-    
-    methods (Static)
+    methods (Static, Access=public)
         function oSpikeTimes = groupSpikeTimes(spikeTimesAllCells, cellGroups)
             %   spikeTimesAllCells: cell array of { nTrials x mUnits}
             %           Each cell is a double [1 x nSpikeTimes] of spike times for a tiral
@@ -59,41 +58,7 @@ classdef SpikeFx
             outputArg.psthBins = min(timeWin):binWidth:max(timeWin);            
 
         end
-        
-        function outputArg = burstAnalysis(cellSpikeTimes,timeWin, varargin)
-            %BURSTANALYSIS
-            outputArg = cellfun(@(x) ...
-                            poissBurst(x, timeWin(1), timeWin(2),varargin{1}),...
-                            cellSpikeTimes,'UniformOutput',false);
-        end
-            
-        %%%%%%%%% Plotting %%%%%%%%%%
-        function plotPsth(psthVec,psthBins,varargin)
-            %  psthVec: A vector of [1 x nTimeBins ] of firing rates
-            %  psthBins: A vector of [1 x nTimeBins ] of time in ms
-            %  varargin:
-            %      1: scalar for Y-axis firing rate scale 
-            
-            plot(psthBins, psthVec,'LineWidth',2);
-            xlim([min(psthBins) max(psthBins)])
-            if ~isempty(varargin)
-                ylim([0 varargin{1}]);
-            end
-            line([0 0],get(gca,'Ylim'))
-        end
-        
-        function plotRasters(rastersLogical, rasterBins)
-            SpikeFx.doRastersAndBursts_(rastersLogical, rasterBins);            
-        end
        
-        function plotBursts(bobTimes, eobTimes, rasterBins)
-            SpikeFx.doRastersAndBursts_([], rasterBins, bobTimes, eobTimes);            
-        end
-        
-        function plotRastersAndBursts(rastersLogical, rasterBins, bobTimes, eobTimes)
-            SpikeFx.doRastersAndBursts_(rastersLogical, rasterBins, bobTimes, eobTimes);            
-        end
-        
         function outputArg = jpsthXcorrHist(jpsth,lagBins)
             %JPSTHXCORRHIST Summary of this method goes here
             %   Detailed explanation goes here
@@ -111,23 +76,23 @@ classdef SpikeFx
             %   Detailed explanation goes here
             % Function handle for psth
             %fx_coinh = @getCoincidence;
-            outputArg = SpikeFx.getCoincidence_(jpsth,lagBins);
+            outputArg = SpikeUtils.getCoincidence_(jpsth,lagBins);
         end
         
         function outputArg = getPsthFuns()
-            outputArg = { @SpikeFx.rasters % rasters fx
-                @SpikeFx.psth % psth fx
+            outputArg = { @SpikeUtils.rasters % rasters fx
+                @SpikeUtils.psth % psth fx
                 };
         end
         
         function outputArg = getJpsthFuns()
-            outputArg = { @SpikeFx.jpsthXcorrHist % cross-corr hist fx
-                @SpikeFx.jpsthCoincidenceHist % coincidence hist fx
+            outputArg = { @SpikeUtils.jpsthXcorrHist % cross-corr hist fx
+                @SpikeUtils.jpsthCoincidenceHist % coincidence hist fx
                 };
         end
         
         function outputArg = pspKernel()
-            outputArg = SpikeFx.getPspKernel_();
+            outputArg = SpikeUtils.getPspKernel_();
         end
         
     end
@@ -185,67 +150,6 @@ classdef SpikeFx
             % 'same')'; % added transpose int he end
         end
         
-        
-        function doRastersAndBursts_(rastersLogical, rasterBins, varargin)
-            % rastersLogical: Logical matrix [nTrials x mBins]. 
-            %       For a given bin, no spike = 0, spike = 1, 
-            %     rasterBins: Vector of [1 x mBins]. Raster bin times in ms
-            %      
-            fillRatio = 0.8; % How much of the plot to fill
-            tickHeightFrac = 0.9;
-            vertHeight_fx = @(nTrials) (fillRatio*max(get(gca,'YLim')))/nTrials;
-            
-            % Plot Rasters
-            if ~isempty(rastersLogical)
-                nTrials = size(rastersLogical, 1);
-                % Verical offset for each trial
-                vertHeight = vertHeight_fx(nTrials);
-                % use 90 % for vertical height for tick
-                tickHeight = tickHeightFrac*vertHeight;
-                % Find the trial (yPoints) and timebin (xPoints) of each spike
-                [trialNos,timebins] = find(rastersLogical);
-                trialNos = trialNos';
-                trialNos = trialNos.*vertHeight;
-                timebins = timebins';
-                x = [ rasterBins(timebins);rasterBins(timebins);NaN(size(timebins)) ];
-                y = [ trialNos - tickHeight/2;trialNos + tickHeight/2;NaN(size(trialNos)) ];
-                plot(x(:),y(:),'k','color',[0.2 0.2 0.2 0.5]);
-                xlim([min(rasterBins) max(rasterBins)])
-            end
-            % Plot bursts
-            % If varargs then plot bursts
-            if length(varargin) >= 2
-                bobT = varargin{1};
-                eobT = varargin{2};
-                nTrials = size(bobT,1);
-                SpikeFx.doBursts_(bobT,eobT,rasterBins,vertHeight_fx(nTrials));
-            end
-
-        end
-        
-        function doBursts_(bobTimes, eobTimes, rasterBins, varargin)
-            %  bobTimes: Cell array of {nTrials x 1}
-            %  eobTimes: Cell array of {nTrials x 1}
-            %  Note: Each cell has [1 x nBurst_times]
-            %  varargin: 
-            %        vertHeight for each trial
-            vertHeight = 1;
-            if length(varargin) > 0
-                vertHeight = varargin{1};
-            end
-  
-            x = [ cell2mat(vertcat(bobTimes)');
-                        cell2mat(vertcat(eobTimes)');
-                        NaN(size(cell2mat(vertcat(bobTimes)'))) ];
-                    
-            trialNos = arrayfun(@(t) ones(1,numel(bobTimes{t})).*t,1:size(bobTimes,1),'UniformOutput',false);
-            trialNos = cell2mat(vertcat(trialNos));
-            trialNos = (trialNos.*vertHeight)-0.4*vertHeight;
-            y = [ trialNos;trialNos;NaN(size(trialNos)) ];
-            plot(x(:),y(:),'k','color',[0.9 0.0 0.0 0.4]);
-            alpha(0.5)
-            xlim([min(rasterBins) max(rasterBins)])
-        end
         
 
         
