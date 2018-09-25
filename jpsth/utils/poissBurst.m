@@ -67,14 +67,12 @@ function [oStruct]=poissBurst(inputTrain, inStartT, inStopT,varargin)
 opts = parseInputArgs(varargin);
 
 %%%%%%%%%%%%%%%% Function %%%%%%%%%%%%%%%%%%%%%%%%
+tempInTrain = inputTrain;
 MaxXT=opts.maxExtraTime; % 30;%Max Xtra Time
 MaxXS=opts.maxExtraSpikes;% 10;%Max Xtra Spikes
 MinSPInBurst=opts.minSpikesInBurst;% 2;%Minimum spkes in a Burst
 Anchor=opts.anchorTime; %50;%Anchor Time
-% Probability of burst
 Significance=opts.Significance;
-% Use natural ln() of probability, e.g.
-% ln(0.01) = 4.61, i.e., 0.01 probability
 opts.UserSI=-log(Significance);
 UserSI=opts.UserSI;
 Tol=1e-300;
@@ -319,11 +317,20 @@ if opts.useGpu
   SPT = gather(SPT);
   BOB = gather(BOB);
   BOB = gather(BOB);
+  SOB = gather(SOB);
   gpuDevice(); % clear gpuDevice
 end
 SPT = SPT + offsetSpkTime - jitterTimes;
 BOBT = SPT(BOB(BOB>0))';
 EOBT = SPT(EOB(EOB>0))';
+SOB = SOB(SOB>0);
+
+if numel(BOBT)==1 && BOBT==5159579
+    % debug why? trial 637, 
+    % UID_0001    'eulsef20120904c-01'
+    SPT
+    InTrain
+end
 
 % only spkTimes in window
 SPTWin = SPT(SPT>=inStartT & SPT<=inStopT);
@@ -362,6 +369,7 @@ oStruct = cleanOutput(true);
             'bobT:begining of burst time';
             'eobT:end of burst time';
             'dobT:duration of burst';
+            'sob:surprise of burst';
             'nsdb:number of spikes during burst';
             'ibiT:inter burst interval time';
             'nsdibi:number of spikes during inter burst interval';
@@ -381,6 +389,7 @@ oStruct = cleanOutput(true);
             oStruct.bobT = [];
             oStruct.eobT = [];
             oStruct.dobT = [];
+            oStruct.sob = [];
             oStruct.nsdb = [];
             oStruct.ibiT = [];
             oStruct.nsdibi = [];
@@ -411,6 +420,7 @@ oStruct = cleanOutput(true);
             oStruct.bobT = BOBT;
             oStruct.eobT = EOBT;
             oStruct.dobT = DOBT;
+            oStruct.sob = SOB;
             oStruct.nsdb = NSDB;
             oStruct.ibiT = IBIT;
             oStruct.nsdibi = NSDIBI;
@@ -497,4 +507,3 @@ end
 % to get to allBurst fields:
 % cellIndex = 5;
 %allBobT = arrayfun(@(x) res(1).allBursts{x,cellIndex}.bobT, (1:size(allBursts,1))','UniformOutput',false);
-
