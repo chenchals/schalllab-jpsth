@@ -325,13 +325,6 @@ BOBT = SPT(BOB(BOB>0))';
 EOBT = SPT(EOB(EOB>0))';
 SOB = SOB(SOB>0);
 
-if numel(BOBT)==1 && BOBT==5159579
-    % debug why? trial 637, 
-    % UID_0001    'eulsef20120904c-01'
-    SPT
-    InTrain
-end
-
 % only spkTimes in window
 SPTWin = SPT(SPT>=inStartT & SPT<=inStopT);
 if opts.plotBursts
