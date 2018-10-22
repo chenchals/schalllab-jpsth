@@ -37,3 +37,4 @@ save(fullfile(outDir,'cellBurstsBySurprise.mat'), 'cellBurstsBySurprise', 'burst
 
 % find min/max surprise for each cellId
 
+

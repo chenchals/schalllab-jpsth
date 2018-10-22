@@ -1,6 +1,5 @@
-%function [BOB, EOB, SOB, BOBT, EOBT, IBIT, FRDB, FRIB]=poissBurst(InTrain, StartT, StopT)
 function [oStruct]=poissBurst(inputTrain, inStartT, inStopT,varargin)
-% Modified form p_burst.m (from Hanes, Thompson, and Schall 1995). See
+% POISSBURST Modified from p_burst.m (from Hanes, Thompson, and Schall 1995). See
 % http://www.psy.vanderbilt.edu/faculty/schall/pdfs/reofpres.pdf
 % http://www.psy.vanderbilt.edu/faculty/schall/matlab/P_burst.zip)
 %Returns Spike Index of BOB, EOB and Surprise Of Burst
