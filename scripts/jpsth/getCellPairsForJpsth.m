@@ -1,5 +1,5 @@
  
-inFile = 'Darwin_SAT_CellInfoTable';
+inFile = 'Euler_SAT_CellInfoTable';
 inRootAnalysisDir = '/Volumes/schalllab/Users/Chenchal/JPSTH/';
 rootDataDir = '/Volumes/schalllab/data';
 

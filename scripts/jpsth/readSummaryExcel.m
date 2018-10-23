@@ -22,8 +22,8 @@ function [darwinCellInfos, eulerCellInfos] = readSummaryExcel()
     euler.matfiles = struct2table(dir(fullfile(eulerMatDir,'E*.mat')));
     euler.plxfiles = struct2table(dir(fullfile(eulerPlxDir,'E*.plx')));
 
-    darwinCellInfos = parseRawExcel(darwinSummaryFile, darwin.matfiles);
     eulerCellInfos = parseRawExcel(eulerSummaryFile, euler.matfiles);
+    darwinCellInfos = parseRawExcel(darwinSummaryFile, darwin.matfiles);
 
 
 end
@@ -77,7 +77,6 @@ function [cellInfos] = parseRawExcel(excelSummaryFile, matfiles)
     tempFolders = matfiles.folder(~cellfun('isempty',regexp(matfiles.name,tempSession.SessionName,'match')));
 
         tempTaskFiles = table();
-        dirMatfile =[];
         for t=1:numel(taskFileContains)
             task = taskFileContains{t};
             if contains(lower(task),'zap')
@@ -87,18 +86,22 @@ function [cellInfos] = parseRawExcel(excelSummaryFile, matfiles)
             end
             if ~sum(idx)
                 tempTaskFiles.([task '_matfile']){1} = [];
-                tempTaskFiles.('Dir_matfile'){1} = [];
             else
                 tempTaskFiles.([task '_matfile']){1} = tempFiles(idx);                
-                tempTaskFiles.('Dir_matfile'){1} = tempFolders(idx(1));
                 tempFiles(idx) = [];
-                tempFolders(idx) = [];
             end          
         end
+        if isempty(tempFolders)
+            tempTaskFiles.('Dir_matfile'){1} = [];
+        else
+           tempTaskFiles.('Dir_matfile'){1} = tempFolders(1);
+        end
+
         % process Unit information
         tempUnitTable = cell2table(temp(sessionRows(2:end),3:end),'VariableNames',colNames(3:end));
         tempUnitTable(strcmpi(tempUnitTable.NeuronNumber,'NaN'),:) = [];
         tempUnitTable.Unit = regexprep(tempUnitTable.Unit,'^(\d[a-z])','0$1');
+        tempUnitTable.UnitName = strcat('DSP',tempUnitTable.Unit);
         for c = 1:size(tempUnitTable,1)
             cellInfos = [cellInfos; [tempSession tempTaskFiles  tempTaskTrials tempUnitTable(c,:)]]; %#ok<AGROW>
         end
