@@ -1,6 +1,6 @@
 function [darwinCellInfos, eulerCellInfos] = readSummaryExcel()
 
-    rootAnalysisDir = '~/teba/local';
+    rootAnalysisDir = '/Volumes/schalllab';
     rootDataDir = '/Volumes/schalllab/data';
 
     summaryFileDir = fullfile(rootAnalysisDir,'Users/Chenchal/JPSTH/');
@@ -73,24 +73,28 @@ function [cellInfos] = parseRawExcel(excelSummaryFile, matfiles)
         tempSession = cell2table(temp(sessionRows(1),1:2),'VariableNames',{'SessionName', 'SessionNotes'});
         tempTaskTrials = cell2table(temp(sessionRows(2:4),1:2),'VariableNames',{'TaskName', 'NTrials'});
         tempTaskTrials = cell2table(tempTaskTrials{:,2}','VariableNames',strcat('nTrials_',tempTaskTrials{:,1})');
-
-        tempFiles = matfiles.name(~cellfun('isempty',regexp(matfiles.name,tempSession.SessionName,'match')));
+    tempFiles = matfiles.name(~cellfun('isempty',regexp(matfiles.name,tempSession.SessionName,'match')));
+    tempFolders = matfiles.folder(~cellfun('isempty',regexp(matfiles.name,tempSession.SessionName,'match')));
 
         tempTaskFiles = table();
+        dirMatfile =[];
         for t=1:numel(taskFileContains)
             task = taskFileContains{t};
             if contains(lower(task),'zap')
-                f = tempFiles(contains(lower(tempFiles),'zap'));
+                idx = contains(lower(tempFiles),'zap');
             else
-                f = tempFiles(contains(tempFiles,task) & ~contains(lower(tempFiles),'zap') );
+                idx = contains(tempFiles,task) & ~contains(lower(tempFiles),'zap');
             end
-            if isempty(f)
-                tempTaskFiles.([task '_matfile']){1} = '';
+            if ~sum(idx)
+                tempTaskFiles.([task '_matfile']){1} = [];
+                tempTaskFiles.('Dir_matfile'){1} = [];
             else
-                tempTaskFiles.([task '_matfile']){1} = f{1};
-            end
+                tempTaskFiles.([task '_matfile']){1} = tempFiles(idx);                
+                tempTaskFiles.('Dir_matfile'){1} = tempFolders(idx(1));
+                tempFiles(idx) = [];
+                tempFolders(idx) = [];
+            end          
         end
-
         % process Unit information
         tempUnitTable = cell2table(temp(sessionRows(2:end),3:end),'VariableNames',colNames(3:end));
         tempUnitTable(strcmpi(tempUnitTable.NeuronNumber,'NaN'),:) = [];
