@@ -29,7 +29,7 @@ function [darwinCellInfos, eulerCellInfos, satCellInfoDB] = readSummaryExcel()
     satCellInfoDB = table();
     satCellInfoDB.UID = cellstr(num2str((1:size(temp,1))','UID_SAT_%04d'));
     satCellInfoDB.datafile = temp.SEARCH_matfile;
-    satCellInfoDB.monk = cellfun(@(x) x{1}(1),temp.SEARCH_matfile);
+    satCellInfoDB.monk = cellfun(@(x) x(1),temp.SEARCH_matfile);
     satCellInfoDB.sessionNo = cellfun(@str2num,temp.SessionNumber);    
     satCellInfoDB.monkSessNo = cellstr(strcat(satCellInfoDB.monk,arrayfun(@num2str,satCellInfoDB.sessionNo)));
     satCellInfoDB.cellNumForSession = ...
@@ -49,9 +49,9 @@ function [darwinCellInfos, eulerCellInfos, satCellInfoDB] = readSummaryExcel()
     satCellInfoDB.MF = cellfun(@eval,temp.MF,'UniformOutput',false);
     satCellInfoDB.notes = strcat('SESSION: ',temp.SessionNotes,' UNIT: ', temp.Notes);
     
-    darwinCellInfos = [satCellInfoDB.UID(1:size(darwinCellInfos,1)) darwinCellInfos];
+    darwinCellInfos = [satCellInfoDB(1:size(darwinCellInfos,1),1) darwinCellInfos];
     
-    eulerCellInfos = [satCellInfoDB.UID(size(darwinCellInfos,1)+1:end) eulerCellInfos];
+    eulerCellInfos = [satCellInfoDB(size(darwinCellInfos,1)+1:end,1) eulerCellInfos];
     
   
 end
@@ -114,7 +114,7 @@ function [cellInfos] = parseRawExcel(excelSummaryFile, matfiles)
             if ~sum(idx)
                 tempTaskFiles.([task '_matfile']){1} = [];
             else
-                tempTaskFiles.([task '_matfile']){1} = tempFiles(idx);                
+                tempTaskFiles.([task '_matfile']){1} = tempFiles{idx};                
                 tempFiles(idx) = [];
             end          
         end
