@@ -33,7 +33,7 @@ for s=1:numel(cellsBySession)
         pairs.X_visMovFix = arrayfun(@(x) result.CellInfoTable{x,{'visual', 'move', 'fix'}},pairRowIds(:,1),'UniformOutput',false);
         pairs.Y_visMovFix = arrayfun(@(x) result.CellInfoTable{x,{'visual', 'move', 'fix'}},pairRowIds(:,2),'UniformOutput',false);
         nextPairId = nextPairId + nPairs;
-        JpsthPairCellInfo = [JpsthPairCellInfo;pairs];
+        JpsthPairCellInfo = [JpsthPairCellInfo;pairs]; %#ok<AGROW>
     end
     result.PairInfoTable = pairs;
     oDir = fullfile(inRootAnalysisDir,monkName,sessName);
@@ -41,14 +41,15 @@ for s=1:numel(cellsBySession)
         mkdir(oDir);
     end
     save(fullfile(oDir,[sessName '_PAIRS.mat']),'-struct','result');
-    
-    format2f = @(numFormat,cellArrayDouble) regexprep(arrayfun(@(x) num2str(x{1},numFormat),cellArrayDouble,'UniformOutput',false),'^(.*)$','\[$1\]');
-    JpsthPairCellInfo.X_RF=format2f('%d ',JpsthPairCellInfo.X_RF);
-    JpsthPairCellInfo.Y_RF=format2f('%d ',JpsthPairCellInfo.Y_RF);
-    JpsthPairCellInfo.X_MF=format2f('%d ',JpsthPairCellInfo.X_MF);
-    JpsthPairCellInfo.Y_MF=format2f('%d ',JpsthPairCellInfo.Y_MF);
-    JpsthPairCellInfo.X_visMovFix=format2f('%.2f ',JpsthPairCellInfo.X_visMovFix);
-    JpsthPairCellInfo.Y_visMovFix=format2f('%.2f ',JpsthPairCellInfo.Y_visMovFix);
-     
 end
 save(fullfile(inRootAnalysisDir,'JPSTH_PAIRS_CellInfoTable.mat'),'JpsthPairCellInfo');
+
+format2f = @(numFormat,cellArrayDouble) regexprep(arrayfun(@(x) num2str(x{1},numFormat),cellArrayDouble,'UniformOutput',false),'^(.*)$','\[$1\]');
+JpsthPairCellInfo.X_RF=format2f('%d ',JpsthPairCellInfo.X_RF);
+JpsthPairCellInfo.Y_RF=format2f('%d ',JpsthPairCellInfo.Y_RF);
+JpsthPairCellInfo.X_MF=format2f('%d ',JpsthPairCellInfo.X_MF);
+JpsthPairCellInfo.Y_MF=format2f('%d ',JpsthPairCellInfo.Y_MF);
+JpsthPairCellInfo.X_visMovFix=format2f('%.2f ',JpsthPairCellInfo.X_visMovFix);
+JpsthPairCellInfo.Y_visMovFix=format2f('%.2f ',JpsthPairCellInfo.Y_visMovFix);
+
+writetable(JpsthPairCellInfo,fullfile(inRootAnalysisDir,'JPSTH_PAIRS_CellInfoTable.csv'));
