@@ -1,4 +1,4 @@
-function [darwinCellInfos, eulerCellInfos] = readSummaryExcel()
+function [darwinCellInfos, eulerCellInfos, satCellInfoDB] = readSummaryExcel()
 
     rootAnalysisDir = '/Volumes/schalllab';
     rootDataDir = '/Volumes/schalllab/data';
@@ -21,16 +21,45 @@ function [darwinCellInfos, eulerCellInfos] = readSummaryExcel()
     % Euler files
     euler.matfiles = struct2table(dir(fullfile(eulerMatDir,'E*.mat')));
     euler.plxfiles = struct2table(dir(fullfile(eulerPlxDir,'E*.plx')));
-
-    eulerCellInfos = parseRawExcel(eulerSummaryFile, euler.matfiles);
+    
     darwinCellInfos = parseRawExcel(darwinSummaryFile, darwin.matfiles);
-
-
+    eulerCellInfos = parseRawExcel(eulerSummaryFile, euler.matfiles);
+    
+    temp = [darwinCellInfos;eulerCellInfos];
+    satCellInfoDB = table();
+    satCellInfoDB.UID = num2str((1:size(temp,1))','UID_SAT_%04d');
+    satCellInfoDB.datafile = temp.SEARCH_matfile;
+    satCellInfoDB.monk = cellfun(@(x) x{1}(1),temp.SEARCH_matfile);
+    satCellInfoDB.sessionNo = cellfun(@str2num,temp.SessionNumber);    
+    monkSessNo = cellstr(strcat(satCellInfoDB.monk,arrayfun(@num2str,satCellInfoDB.sessionNo)));
+    satCellInfoDB.cellNumForSession = ...
+        cell2mat(cellfun(@(x) (1:sum(contains(monkSessNo,x)))',...
+        unique(monkSessNo),'UniformOutput',false));
+    satCellInfoDB.cellIdInFile = temp.UnitName;
+    satCellInfoDB.hemi = temp.Hemi;
+    satCellInfoDB.grid = temp.Grid;
+    satCellInfoDB.area = temp.Area;
+    satCellInfoDB.depth = cellfun(@str2num,temp.Depth);
+    satCellInfoDB.nTrialsSearch = cellfun(@str2num,temp.nTrials_SEARCH);
+    satCellInfoDB.unitFuncType = temp.UnitFxType;
+    satCellInfoDB.visual = cellfun(@str2num,temp.Visual);
+    satCellInfoDB.move = cellfun(@str2num,temp.Move);
+    satCellInfoDB.fix = cellfun(@str2num,temp.Fixation);
+    satCellInfoDB.RF = cellfun(@eval,temp.RF);
+    satCellInfoDB.MF = cellfun(@eval,temp.MF);
+    satCellInfoDB.notes = strcat('SESSION: ',cellsGoodVM.SessionNotes,' UNIT: ', cellsGoodVM.Notes);
+    
+    darwinCellInfos = [satCellInfoDB.UID(1:size(darwinCellInfos,1)) darwinCellInfos];
+    
+    eulerCellInfos = [satCellInfoDB.UID(size(darwinCellInfos,1)+1:end) eulerCellInfos];
+    
+  
 end
 
 function [cellInfos] = parseRawExcel(excelSummaryFile, matfiles)
     [~,~,rawCell] = xlsread(excelSummaryFile);
     taskFileContains = {'DET','MG','SEARCH','ZAP'};
+    dirMatfile = char(regexp(matfiles.folder{1},'data/.*$','match'));
     % find numbers
     containsNumbers = cellfun(@isnumeric,rawCell);
     %# convert to string
@@ -74,8 +103,6 @@ function [cellInfos] = parseRawExcel(excelSummaryFile, matfiles)
         tempTaskTrials = cell2table(temp(sessionRows(2:4),1:2),'VariableNames',{'TaskName', 'NTrials'});
         tempTaskTrials = cell2table(tempTaskTrials{:,2}','VariableNames',strcat('nTrials_',tempTaskTrials{:,1})');
     tempFiles = matfiles.name(~cellfun('isempty',regexp(matfiles.name,tempSession.SessionName,'match')));
-    tempFolders = matfiles.folder(~cellfun('isempty',regexp(matfiles.name,tempSession.SessionName,'match')));
-
         tempTaskFiles = table();
         for t=1:numel(taskFileContains)
             task = taskFileContains{t};
@@ -91,11 +118,7 @@ function [cellInfos] = parseRawExcel(excelSummaryFile, matfiles)
                 tempFiles(idx) = [];
             end          
         end
-        if isempty(tempFolders)
-            tempTaskFiles.('Dir_matfile'){1} = [];
-        else
-           tempTaskFiles.('Dir_matfile'){1} = tempFolders(1);
-        end
+        tempTaskFiles.('Dir_matfile'){1} = dirMatfile;
 
         % process Unit information
         tempUnitTable = cell2table(temp(sessionRows(2:end),3:end),'VariableNames',colNames(3:end));
