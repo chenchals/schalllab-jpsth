@@ -27,14 +27,14 @@ function [darwinCellInfos, eulerCellInfos, satCellInfoDB] = readSummaryExcel()
     
     temp = [darwinCellInfos;eulerCellInfos];
     satCellInfoDB = table();
-    satCellInfoDB.UID = num2str((1:size(temp,1))','UID_SAT_%04d');
+    satCellInfoDB.UID = cellstr(num2str((1:size(temp,1))','UID_SAT_%04d'));
     satCellInfoDB.datafile = temp.SEARCH_matfile;
     satCellInfoDB.monk = cellfun(@(x) x{1}(1),temp.SEARCH_matfile);
     satCellInfoDB.sessionNo = cellfun(@str2num,temp.SessionNumber);    
-    monkSessNo = cellstr(strcat(satCellInfoDB.monk,arrayfun(@num2str,satCellInfoDB.sessionNo)));
+    satCellInfoDB.monkSessNo = cellstr(strcat(satCellInfoDB.monk,arrayfun(@num2str,satCellInfoDB.sessionNo)));
     satCellInfoDB.cellNumForSession = ...
-        cell2mat(cellfun(@(x) (1:sum(contains(monkSessNo,x)))',...
-        unique(monkSessNo),'UniformOutput',false));
+        cell2mat(cellfun(@(x) (1:sum(contains(satCellInfoDB.monkSessNo,x)))',...
+        unique(satCellInfoDB.monkSessNo),'UniformOutput',false));
     satCellInfoDB.cellIdInFile = temp.UnitName;
     satCellInfoDB.hemi = temp.Hemi;
     satCellInfoDB.grid = temp.Grid;
@@ -45,9 +45,9 @@ function [darwinCellInfos, eulerCellInfos, satCellInfoDB] = readSummaryExcel()
     satCellInfoDB.visual = cellfun(@str2num,temp.Visual);
     satCellInfoDB.move = cellfun(@str2num,temp.Move);
     satCellInfoDB.fix = cellfun(@str2num,temp.Fixation);
-    satCellInfoDB.RF = cellfun(@eval,temp.RF);
-    satCellInfoDB.MF = cellfun(@eval,temp.MF);
-    satCellInfoDB.notes = strcat('SESSION: ',cellsGoodVM.SessionNotes,' UNIT: ', cellsGoodVM.Notes);
+    satCellInfoDB.RF = cellfun(@eval,temp.RF,'UniformOutput',false);
+    satCellInfoDB.MF = cellfun(@eval,temp.MF,'UniformOutput',false);
+    satCellInfoDB.notes = strcat('SESSION: ',temp.SessionNotes,' UNIT: ', temp.Notes);
     
     darwinCellInfos = [satCellInfoDB.UID(1:size(darwinCellInfos,1)) darwinCellInfos];
     
