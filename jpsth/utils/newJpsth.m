@@ -44,7 +44,7 @@ psth = (arrayfun(@(x) fx_psth(rasters(x),binWidth,@mean), (1:nCells)','UniformOu
 psthSd = (arrayfun(@(x) fx_psth(rasters(x),binWidth,@std), (1:nCells)','UniformOutput',false));
 
 %% Compute JPSTH for each pair %%
-
+tic
 for i = 1:nPairs
     temp = struct();
     if mod(i,100)
@@ -76,9 +76,7 @@ for i = 1:nPairs
     % add to output struct
     jpsthStruct(i)=temp;    
 end
-
 toc
-
 outVar.binWidth = binWidth;
 outVar.timeBins = timeBins;
 outVar.coincidenceLag = coincidenceBins*binWidth;
