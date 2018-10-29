@@ -59,10 +59,9 @@ for s = 1:numel(sessionRowIds)
      % the number of pairs match AND all the rows match as-is or
      % one of the arrays conatin all items may be in a different order?    
      if isequaln(jpsthStruct_pairKeys,pairsTodo_pairKeys) || ...
-                sum(contains(jpsthStruct_pairKeys,pairsTodo_pairKeys)) == numel(jpsthStruct_pairKeys))
+                sum(contains(jpsthStruct_pairKeys,pairsTodo_pairKeys)) == numel(jpsthStruct_pairKeys)
             jpsthTable.sortIdxs = cellfun(@(x) find(contains(pairsTodo_pairKeys,x)),jpsthStruct_pairKeys);
-            jpsthTable =  [sortrows(jpsthTable,'sortIdxs') pairsTodo];
-            
+            jpsthTable =  [pairsTodo sortrows(jpsthTable,'sortIdxs')];           
      else
         error('*****Number of pairs done by newJpsth does not match the pairsToDo\n******\n');
      end    
