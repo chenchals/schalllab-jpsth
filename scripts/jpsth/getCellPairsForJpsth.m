@@ -6,10 +6,10 @@ rootDataDir = '/Volumes/schalllab/data';
 
 db = load(fullfile(inRootAnalysisDir,inFile));
 
- t=table();
- t.monkSessionNum = unique(db.CellInfoTable.monkSessNo);
- t.session = regexprep(unique(db.CellInfoTable.datafile),'^([A-Z]\d*)-RH.*$','$1');
- t.nUnits = cell2mat(cellfun(@(x) sum(contains(db.CellInfoTable.datafile,x)),unique(db.CellInfoTable.datafile),'UniformOutput',false));
+ JpsthPairSummary=table();
+ JpsthPairSummary.monkSessionNum = unique(db.CellInfoTable.monkSessNo);
+ JpsthPairSummary.session = regexprep(unique(db.CellInfoTable.datafile),'^([A-Z]\d*)-RH.*$','$1');
+ JpsthPairSummary.nUnits = cell2mat(cellfun(@(x) sum(contains(db.CellInfoTable.datafile,x)),unique(db.CellInfoTable.datafile),'UniformOutput',false));
 
 goodVMIdx = db.CellInfoTable.visual > 0.5 | db.CellInfoTable.move > 0.5;
 cellsGoodVM = db.CellInfoTable(goodVMIdx,:);
@@ -23,10 +23,10 @@ JpsthPairCellInfo = table();
 for s=1:numel(cellsBySession)
     res = cellsGoodVM(cellsBySession{s},:);
     session = regexprep(res.datafile{1},'^([A-Z]\d*)-RH.*$','$1');
-    tIdx = contains(t.session,session);
+    tIdx = contains(JpsthPairSummary.session,session);
     if size(res,1) <= 1
-        t.nCellsForJpsth(tIdx) = 0;
-        t.nPairsJpsth(tIdx) = 0;
+        JpsthPairSummary.nCellsForJpsth(tIdx) = 0;
+        JpsthPairSummary.nPairsJpsth(tIdx) = 0;
         continue;
     elseif size(res,1) > 1 % we have more than 1 unit
         result.CellInfoTable = cellsGoodVM(cellsBySession{s},:);
@@ -38,10 +38,10 @@ for s=1:numel(cellsBySession)
         pairs.Pair_UID = cellstr(num2str(((1:nPairs)+ nextPairId)','PAIR_%04d'));
         pairs.datafile = result.CellInfoTable.datafile(pairRowIds(:,1));   
         
-        t.nCellsForJpsth(tIdx) = size(result.CellInfoTable,1);
-        t.nPairsJpsth(tIdx) = nchoosek(size(result.CellInfoTable,1),2);
-        t.firstPairUID(tIdx) = pairs.Pair_UID(1);
-        t.lastPairUID(tIdx) = pairs.Pair_UID(end);
+        JpsthPairSummary.nCellsForJpsth(tIdx) = size(result.CellInfoTable,1);
+        JpsthPairSummary.nPairsJpsth(tIdx) = nchoosek(size(result.CellInfoTable,1),2);
+        JpsthPairSummary.firstPairUID(tIdx) = pairs.Pair_UID(1);
+        JpsthPairSummary.lastPairUID(tIdx) = pairs.Pair_UID(end);
         
         for v = 1:numel(varsForPairs)
             cName = varsForPairs{v};
@@ -77,7 +77,6 @@ JpsthPairCellInfo.Y_visMovFix=format2f('%.2f ',JpsthPairCellInfo.Y_visMovFix);
 
 writetable(JpsthPairCellInfo,fullfile(inRootAnalysisDir,'JPSTH_PAIRS_CellInfoTable.csv'));
 
-JpsthPairSummary = t;
 save(fullfile(inRootAnalysisDir,'JPSTH-PAIR-Summary.mat'), 'JpsthPairSummary');
 writetable(JpsthPairSummary,fullfile(inRootAnalysisDir,'JPSTH-PAIR-Summary.csv'))
 

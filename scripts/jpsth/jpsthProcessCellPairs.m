@@ -28,9 +28,6 @@ loadVars={'Target_'
     'MFs'
     'BrainID'};
 
-
-
-
 % load variable: JpsthPairsCellInfo
 load('/Volumes/schalllab/Users/Chenchal/JPSTH/JPSTH_PAIRS_CellInfoTable.mat')
 
@@ -55,11 +52,18 @@ for s = 1:numel(sessionRowIds)
         unit = S.(unitIdsInFile{u});
         alignedSpikeTimeCellArray(:,u) = arrayfun(@(x) unit(x,unit(x,:)~=0)-arrayTime,(1:nTrials)','UniformOutput',false);
     end
-    ZZ = newJpsth(alignedSpikeTimeCellArray,[-200 600],5,5);
-    ZZ.X_cell = unitIdsInFile(ZZ.cellPairs(:,1));
-    ZZ.Y_cell = unitIdsInFile(ZZ.cellPairs(:,2));
+    [~,jpsthTable] = newJpsth(alignedSpikeTimeCellArray,unitIdsInFile,[-200 600],10,10);
     %verify cell-pairing in newJpsh with pairsTodo
-    pairKeys = strcat(unitIdsInFile(ZZ.cellPairs(:,1)),'-',unitIdsInFile(ZZ.cellPairs(:,2)));
+    jpsthStruct_pairKeys = strcat(jpsthTable.xCellId,'-',jpsthTable.yCellId);
     pairsTodo_pairKeys = strcat(pairsTodo.X_cellIdInFile,'-',pairsTodo.Y_cellIdInFile);
-    
+     % the number of pairs match AND all the rows match as-is or
+     % one of the arrays conatin all items may be in a different order?    
+     if isequaln(jpsthStruct_pairKeys,pairsTodo_pairKeys) || ...
+                sum(contains(jpsthStruct_pairKeys,pairsTodo_pairKeys)) == numel(jpsthStruct_pairKeys))
+            jpsthTable.sortIdxs = cellfun(@(x) find(contains(pairsTodo_pairKeys,x)),jpsthStruct_pairKeys);
+            jpsthTable =  [sortrows(jpsthTable,'sortIdxs') pairsTodo];
+            
+     else
+        error('*****Number of pairs done by newJpsth does not match the pairsToDo\n******\n');
+     end    
 end
