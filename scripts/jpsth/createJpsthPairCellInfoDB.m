@@ -1,5 +1,5 @@
  
-inFile = 'SAT_CellInfoDB';
+inFile = 'SATCellInfoDB';
 inRootAnalysisDir = '/Volumes/schalllab/Users/Chenchal/JPSTH/';
 monkNameMap = containers.Map({'D' 'E'},{'Darwin','Euler'});
 rootDataDir = '/Volumes/schalllab/data';
@@ -7,18 +7,18 @@ rootDataDir = '/Volumes/schalllab/data';
 db = load(fullfile(inRootAnalysisDir,inFile));
 
  JpsthPairSummary=table();
- JpsthPairSummary.monkSessionNum = unique(db.CellInfoTable.monkSessNo);
- JpsthPairSummary.session = regexprep(unique(db.CellInfoTable.datafile),'^([A-Z]\d*)-RH.*$','$1');
- JpsthPairSummary.nUnits = cell2mat(cellfun(@(x) sum(contains(db.CellInfoTable.datafile,x)),unique(db.CellInfoTable.datafile),'UniformOutput',false));
+ JpsthPairSummary.monkSessionNum = unique(db.CellInfoDB.monkSessNo);
+ JpsthPairSummary.session = regexprep(unique(db.CellInfoDB.datafile),'^([A-Z]\d*)-RH.*$','$1');
+ JpsthPairSummary.nUnits = cell2mat(cellfun(@(x) sum(contains(db.CellInfoDB.datafile,x)),unique(db.CellInfoDB.datafile),'UniformOutput',false));
 
-goodVMIdx = db.CellInfoTable.visual > 0.5 | db.CellInfoTable.move > 0.5;
-cellsGoodVM = db.CellInfoTable(goodVMIdx,:);
+goodVMIdx = db.CellInfoDB.visual > 0.5 | db.CellInfoDB.move > 0.5;
+cellsGoodVM = db.CellInfoDB(goodVMIdx,:);
 
 uniqMonkSessNo = unique(cellsGoodVM.monkSessNo);
 cellsBySession = arrayfun(@(x) find(contains(cellsGoodVM.monkSessNo,x)), uniqMonkSessNo, 'UniformOutput',false);
 varsForPairs = {'UID','cellIdInFile','depth','area','unitFuncType','RF','MF'};
 nextPairId = 0;
-JpsthPairCellInfo = table();
+JpsthPairCellInfoDB = table();
 
 for s=1:numel(cellsBySession)
     res = cellsGoodVM(cellsBySession{s},:);
@@ -51,7 +51,7 @@ for s=1:numel(cellsBySession)
         pairs.X_visMovFix = arrayfun(@(x) result.CellInfoTable{x,{'visual', 'move', 'fix'}},pairRowIds(:,1),'UniformOutput',false);
         pairs.Y_visMovFix = arrayfun(@(x) result.CellInfoTable{x,{'visual', 'move', 'fix'}},pairRowIds(:,2),'UniformOutput',false);
         nextPairId = nextPairId + nPairs;
-        JpsthPairCellInfo = [JpsthPairCellInfo;pairs]; %#ok<AGROW>
+        JpsthPairCellInfoDB = [JpsthPairCellInfoDB;pairs]; %#ok<AGROW>
         tempSumm =table();
         tempSumm.sessionName = sessName;
         
@@ -65,17 +65,17 @@ for s=1:numel(cellsBySession)
     fprintf('Writing file %s\n',[sessName '_PAIRS.mat']);
     save(fullfile(oDir,[sessName '_PAIRS.mat']),'-struct','result');
 end
-save(fullfile(inRootAnalysisDir,'JPSTH_PAIRS_CellInfoTable.mat'),'JpsthPairCellInfo');
+save(fullfile(inRootAnalysisDir,'JPSTH_PAIRS_CellInfoDB.mat'),'JpsthPairCellInfoDB');
 
 format2f = @(numFormat,cellArrayDouble) regexprep(arrayfun(@(x) num2str(x{1},numFormat),cellArrayDouble,'UniformOutput',false),'^(.*)$','\[$1\]');
-JpsthPairCellInfo.X_RF=format2f('%d ',JpsthPairCellInfo.X_RF);
-JpsthPairCellInfo.Y_RF=format2f('%d ',JpsthPairCellInfo.Y_RF);
-JpsthPairCellInfo.X_MF=format2f('%d ',JpsthPairCellInfo.X_MF);
-JpsthPairCellInfo.Y_MF=format2f('%d ',JpsthPairCellInfo.Y_MF);
-JpsthPairCellInfo.X_visMovFix=format2f('%.2f ',JpsthPairCellInfo.X_visMovFix);
-JpsthPairCellInfo.Y_visMovFix=format2f('%.2f ',JpsthPairCellInfo.Y_visMovFix);
+JpsthPairCellInfoDB.X_RF=format2f('%d ',JpsthPairCellInfoDB.X_RF);
+JpsthPairCellInfoDB.Y_RF=format2f('%d ',JpsthPairCellInfoDB.Y_RF);
+JpsthPairCellInfoDB.X_MF=format2f('%d ',JpsthPairCellInfoDB.X_MF);
+JpsthPairCellInfoDB.Y_MF=format2f('%d ',JpsthPairCellInfoDB.Y_MF);
+JpsthPairCellInfoDB.X_visMovFix=format2f('%.2f ',JpsthPairCellInfoDB.X_visMovFix);
+JpsthPairCellInfoDB.Y_visMovFix=format2f('%.2f ',JpsthPairCellInfoDB.Y_visMovFix);
 
-writetable(JpsthPairCellInfo,fullfile(inRootAnalysisDir,'JPSTH_PAIRS_CellInfoTable.csv'));
+writetable(JpsthPairCellInfoDB,fullfile(inRootAnalysisDir,'JPSTH_PAIRS_CellInfoTable.csv'));
 
 save(fullfile(inRootAnalysisDir,'JPSTH-PAIR-Summary.mat'), 'JpsthPairSummary');
 writetable(JpsthPairSummary,fullfile(inRootAnalysisDir,'JPSTH-PAIR-Summary.csv'))

@@ -1,4 +1,4 @@
-function [darwinCellInfos, eulerCellInfos, satCellInfoDB] = readSummaryExcel()
+function [darwinCellInfoDB, eulerCellInfoDB, satCellInfoDB] = createSATCellInfoDB()
 
     rootAnalysisDir = '/Volumes/schalllab';
     rootDataDir = '/Volumes/schalllab/data';
@@ -22,10 +22,10 @@ function [darwinCellInfos, eulerCellInfos, satCellInfoDB] = readSummaryExcel()
     euler.matfiles = struct2table(dir(fullfile(eulerMatDir,'E*.mat')));
     euler.plxfiles = struct2table(dir(fullfile(eulerPlxDir,'E*.plx')));
     
-    darwinCellInfos = parseRawExcel(darwinSummaryFile, darwin.matfiles);
-    eulerCellInfos = parseRawExcel(eulerSummaryFile, euler.matfiles);
+    darwinCellInfoDB = parseRawExcel(darwinSummaryFile, darwin.matfiles);
+    eulerCellInfoDB = parseRawExcel(eulerSummaryFile, euler.matfiles);
     
-    temp = [darwinCellInfos;eulerCellInfos];
+    temp = [darwinCellInfoDB;eulerCellInfoDB];
     satCellInfoDB = table();
     satCellInfoDB.UID = cellstr(num2str((1:size(temp,1))','UID_SAT_%04d'));
     satCellInfoDB.datafile = temp.SEARCH_matfile;
@@ -48,12 +48,20 @@ function [darwinCellInfos, eulerCellInfos, satCellInfoDB] = readSummaryExcel()
     satCellInfoDB.RF = cellfun(@eval,temp.RF,'UniformOutput',false);
     satCellInfoDB.MF = cellfun(@eval,temp.MF,'UniformOutput',false);
     satCellInfoDB.notes = strcat('SESSION: ',temp.SessionNotes,' UNIT: ', temp.Notes);
+    % Darwin
+    darwinCellInfoDB = [satCellInfoDB(1:size(darwinCellInfoDB,1),1) darwinCellInfoDB];
+    % Euler
+    eulerCellInfoDB = [satCellInfoDB(size(darwinCellInfoDB,1)+1:end,1) eulerCellInfoDB];
     
-    darwinCellInfos = [satCellInfoDB(1:size(darwinCellInfos,1),1) darwinCellInfos];
-    
-    eulerCellInfos = [satCellInfoDB(size(darwinCellInfos,1)+1:end,1) eulerCellInfos];
-    
-  
+    % Save CellInfoDB for both Darwin and Euler
+    CellInfoDB = satCellInfoDB;
+    save(fullfile(summaryFileDir,'SATCellInfoDB.mat'),'CellInfoDB');
+    % Save CellInfoDB for Darwin
+    CellInfoDB = darwinCellInfoDB;
+    save(fullfile(summaryFileDir,'DarwinCellInfoDB.mat'),'CellInfoDB');
+    % Save CellInfoDB for Euler
+    CellInfoDB = darwinCellInfoDB;
+    save(fullfile(summaryFileDir,'DarwinCellInfoDB.mat'),'CellInfoDB');   
 end
 
 function [cellInfos] = parseRawExcel(excelSummaryFile, matfiles)
