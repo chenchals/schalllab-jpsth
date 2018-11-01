@@ -9,8 +9,8 @@ function [mapTarget_,mapError_] = SATDefinitions()
     % From teba/Users/Rich/Mat_Code/Import/EventTranslator.m Lines:123-186
     %  Comment for each column Index is used as column names for that column
     % 
-    colNames = [];
-    colDesc = [];
+    colNames = {};
+    colDesc = {};
     % Column #1
     colDesc = [colDesc; 'Target align time'];
     colNames =  [colNames;'TargetAlignTime'];      
@@ -53,8 +53,8 @@ function [mapTarget_,mapError_] = SATDefinitions()
 
 
 %% Error_ variable as column names and descriptions as map:
-    colNames = [];
-    colDesc = [];
+    colNames = {};
+    colDesc = {};
     % From teba/Users/Rich/Mat_Code/Import/EventTranslator.m Lines:87-95
     %  Comment for each column Index is used as column names for that column
     %find Error Codes

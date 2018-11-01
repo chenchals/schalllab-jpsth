@@ -54,8 +54,6 @@ for s=1:numel(cellsBySession)
         JpsthPairCellInfoDB = [JpsthPairCellInfoDB;pairs]; %#ok<AGROW>
         tempSumm =table();
         tempSumm.sessionName = sessName;
-        
-        
     end
     result.PairInfoTable = pairs;
     oDir = fullfile(inRootAnalysisDir,monkName,sessName);
