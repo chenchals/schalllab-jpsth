@@ -1,6 +1,5 @@
-%function [BOB, EOB, SOB, BOBT, EOBT, IBIT, FRDB, FRIB]=poissBurst(InTrain, StartT, StopT)
 function [oStruct]=poissBurst(inputTrain, inStartT, inStopT,varargin)
-% Modified form p_burst.m (from Hanes, Thompson, and Schall 1995). See
+% POISSBURST Modified from p_burst.m (from Hanes, Thompson, and Schall 1995). See
 % http://www.psy.vanderbilt.edu/faculty/schall/pdfs/reofpres.pdf
 % http://www.psy.vanderbilt.edu/faculty/schall/matlab/P_burst.zip)
 %Returns Spike Index of BOB, EOB and Surprise Of Burst
@@ -67,12 +66,14 @@ function [oStruct]=poissBurst(inputTrain, inStartT, inStopT,varargin)
 opts = parseInputArgs(varargin);
 
 %%%%%%%%%%%%%%%% Function %%%%%%%%%%%%%%%%%%%%%%%%
+tempInTrain = inputTrain;
 MaxXT=opts.maxExtraTime; % 30;%Max Xtra Time
 MaxXS=opts.maxExtraSpikes;% 10;%Max Xtra Spikes
 MinSPInBurst=opts.minSpikesInBurst;% 2;%Minimum spkes in a Burst
 Anchor=opts.anchorTime; %50;%Anchor Time
-
-Signif=0.05;UserSI=-log(Signif);
+Significance=opts.Significance;
+opts.UserSI=-log(Significance);
+UserSI=opts.UserSI;
 Tol=1e-300;
 if opts.jitterSpikeTimes
     jitterForSimultaneousSpikes = 1e-20;
@@ -119,7 +120,8 @@ if(~isempty(SPT))
     Duration=StopT-StartT;
     %Average Spike Rate MU
     if opts.averageFr > 0
-        MU = opts.averageFr;
+        % since mu given in Hz, divide by 1000
+        MU = opts.averageFr/1000;
     elseif opts.useWindowForMu
         MU = (length(find(SPT>= StartT & SPT <= StopT)))/(Duration);
     elseif ~opts.useWindowForMu
@@ -163,7 +165,20 @@ FspAB=1;%First spike After Burst
 %Temp=0;
 Done=0;
 %******************Output Arguments*********************
-BOB=[];EOB=[];SOB=[];%MUST be set to EMPTY
+%BOB=single([]);EOB=single([]);SOB=single([]);%MUST be set to EMPTY
+
+BOB = zeros(1,5000,'single');
+EOB = zeros(1,5000,'single');
+SOB = zeros(1,5000,'single');
+if opts.useGpu
+ gpuDevice(); % reset gpu device
+ fprintf('Using GPU\n');
+ SPT = gpuArray(SPT);
+ ISI = gpuArray(ISI);
+ BOB = gpuArray(zeros(1,5000,'single'));
+ EOB = gpuArray(zeros(1,5000,'single'));
+ SOB = gpuArray(zeros(1,5000,'single'));
+end
 %########################################################
 while(FspAB <= MaxSpikes-1 || ~Done)
     Iterate=1;
@@ -295,10 +310,19 @@ while(FspAB <= MaxSpikes-1 || ~Done)
         break
     end
 end%while(FspAB <= MaxSpikes-1)
+
 % Subtract offsetSpkTime to get back original times for SPT
+if opts.useGpu
+  SPT = gather(SPT);
+  BOB = gather(BOB);
+  BOB = gather(BOB);
+  SOB = gather(SOB);
+  gpuDevice(); % clear gpuDevice
+end
 SPT = SPT + offsetSpkTime - jitterTimes;
-BOBT = SPT(BOB)';
-EOBT = SPT(EOB)';
+BOBT = SPT(BOB(BOB>0))';
+EOBT = SPT(EOB(EOB>0))';
+SOB = SOB(SOB>0);
 
 % only spkTimes in window
 SPTWin = SPT(SPT>=inStartT & SPT<=inStopT);
@@ -322,18 +346,22 @@ FRDIBI =  1000*(arrayfun(@(b,e) numel(SPT(SPT>=b & SPT<=e)),EOBT(1:end-1),BOBT(2
 % number of spikes Inter burst
 NSDIBI = arrayfun(@(b,e) numel(SPT(SPT>=b & SPT<=e)),EOBT(1:end-1),BOBT(2:end));
 
+
 oStruct = cleanOutput(true);
 
     function oStruct = cleanOutput(analyzed)
         
         % Output as struct?
         oStruct.fieldDefinitions = {
-            'spkT:spike times or train';
+            % 'spkT:spike times or train';
             'spkTWin:spike times in time window';
+            'opts:options used for poissBurst call';
             'timeWin:time window used to compute mu for burst';
+            'nb:number of bursts';
             'bobT:begining of burst time';
             'eobT:end of burst time';
             'dobT:duration of burst';
+            'sob:surprise of burst';
             'nsdb:number of spikes during burst';
             'ibiT:inter burst interval time';
             'nsdibi:number of spikes during inter burst interval';
@@ -344,13 +372,16 @@ oStruct = cleanOutput(true);
             'frdTWin:firing rate during time window';
             'frSpkT:firing rate for spike train input';
             };
+        oStruct.opts = opts;
         oStruct.timeWin = [inStartT inStopT];
         if ~analyzed
-            oStruct.spkT = [];
+            % oStruct.spkT = [];
             oStruct.spkTWin = [];
+            oStruct.nb = 0;
             oStruct.bobT = [];
             oStruct.eobT = [];
             oStruct.dobT = [];
+            oStruct.sob = [];
             oStruct.nsdb = [];
             oStruct.ibiT = [];
             oStruct.nsdibi = [];
@@ -361,25 +392,27 @@ oStruct = cleanOutput(true);
             oStruct.frdTWin = [];
             oStruct.frSpkT = [];
             if exist('SPT','var')
-                oStruct.spkT = SPT;
+                %oStruct.spkT = SPT;
                 oStruct.frSpkT = NaN;
                 if ~isempty(SPT)
                     oStruct.frSpkT = 1000*numel(SPT)/range(SPT);
                 end
             end
             if exist('SPTWin','var')
-                oStruct.spkTWin = SPTWin;
+                %oStruct.spkTWin = SPTWin;
                 oStruct.frdTWin = NaN;
                 if ~isempty(SPT)
                     oStruct.frdTWin = 1000*numel(SPTWin)/range([inStartT,inStopT]);
                 end
             end
         else
-            oStruct.spkT = SPT;
+            %oStruct.spkT = SPT;
             oStruct.spkTWin = SPTWin;
+            oStruct.nb = numel(BOBT);
             oStruct.bobT = BOBT;
             oStruct.eobT = EOBT;
             oStruct.dobT = DOBT;
+            oStruct.sob = SOB;
             oStruct.nsdb = NSDB;
             oStruct.ibiT = IBIT;
             oStruct.nsdibi = NSDIBI;
@@ -432,7 +465,10 @@ function [ args ] = parseInputArgs(varargin)
    argParser.addParameter('maxExtraTime', 30); % default
    argParser.addParameter('maxExtraSpikes', 10); % default
    argParser.addParameter('anchorTime', 50); % default
-   argParser.addParameter('plotBursts', true); % default  
+   argParser.addParameter('plotBursts', false); % default  
+   argParser.addParameter('useGpu', false); % default  
+   argParser.addParameter('Significance', 0.05); % default  
+   argParser.parse();
    if ~isempty(varargin{1})
       argParser.parse(varargin{1}{:});
    end
@@ -460,5 +496,6 @@ end
 % OStructAllCells = arrayfun(@(x) poissBurst(x{1},-200,800),fx_allCells(SpikeTimes.saccade),'UniformOutput',false);
 % allOStruct = arrayfun(@(c) arrayfun(@(x) poissBurst(x{1},-200,800),c,'UniformOutput',false),SpikeTimes.saccade,'UniformOutput',false);
 
-
-
+% to get to allBurst fields:
+% cellIndex = 5;
+%allBobT = arrayfun(@(x) res(1).allBursts{x,cellIndex}.bobT, (1:size(allBursts,1))','UniformOutput',false);
