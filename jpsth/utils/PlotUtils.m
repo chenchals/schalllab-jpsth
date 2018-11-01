@@ -30,7 +30,7 @@ classdef PlotUtils
         function plotRastersAndBursts(rastersLogical, rasterBins, bobTimes, eobTimes)
             PlotUtils.doRastersAndBursts_(rastersLogical, rasterBins, bobTimes, eobTimes);
         end
-        
+                
     end
     
     methods (Static, Access=private)
