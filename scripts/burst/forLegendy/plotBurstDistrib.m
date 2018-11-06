@@ -1,5 +1,5 @@
 % load burst distribution
-burstDistribFile = '/Volumes/schalllab/Users/Chenchal/Legendy/BurstFigures/cellBurstDistributions.mat';
+burstDistribFile = 'burstDistributions/cellBurstDistributions.mat';
 load(burstDistribFile);
 
 for pp = 1:size(burstDistrib.distributionTbl,1)
