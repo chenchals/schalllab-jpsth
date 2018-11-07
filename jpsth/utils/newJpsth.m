@@ -82,7 +82,7 @@ for i = 1:nPairs
     jpsthTable(i)=temp;    
 end
 toc
-jpsthTable = struct2table(jpsthTable);
+jpsthTable = struct2table(jpsthTable,'AsArray',true);
 outVar.jpsth = jpsthTable;
 % save fx for callin on output
 outVar.smoothFx = @(v,nPoints,sigma) convn(v,...
