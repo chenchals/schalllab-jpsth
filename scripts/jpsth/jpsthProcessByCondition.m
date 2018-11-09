@@ -1,13 +1,14 @@
 function jpsthProcessByCondition()
 
+    saveFig = true;    
     rootDataDir = '/Volumes/schalllab/data';
     rootAnalysisDir = '/Volumes/schalllab/Users/Chenchal/JPSTH';
-    jpsthResultsDir = fullfile(rootAnalysisDir,'Figs');
+    jpsthResultsDir = fullfile(rootAnalysisDir,'FigsBinWidth_1');
     if ~exist(jpsthResultsDir, 'dir')
         mkdir(jpsthResultsDir);
     end
     %
-    binWidth = 5;
+    binWidth = 1;% for JPSTH computations
     coincidenceBinWidth = 5;
     % Info files
     jpshPairsFile = fullfile(rootAnalysisDir,'JPSTH_PAIRS_CellInfoDB.mat');
@@ -76,10 +77,12 @@ function jpsthProcessByCondition()
             else
                 alignTime = trialEventTimes.CueOn{s} + trialEventTimes.(alignEvent){s};
             end       
-            alignedSpikeTimeCellArray = cell(nTrials,nUnits);
+            alignedSpkTimes = cell(nTrials,nUnits);
             for u = 1:nUnits
                 unit = S.(unitIdsInFile{u});
-                alignedSpikeTimeCellArray(:,u) = arrayfun(@(x) unit(x,unit(x,:)~=0)-alignTime(x),(1:nTrials)','UniformOutput',false);
+                alignedSpkTimes(:,u) = arrayfun(@(x) unit(x,unit(x,:)~=0)-alignTime(x),(1:nTrials)','UniformOutput',false);
+                alignedSpkTimes(:,u) = cellfun(@(x) x(x>=alignedTimeWin(1) & x<=alignedTimeWin(2)),alignedSpkTimes(:,u),'UniformOutput',false);
+                %alignedSpkTimes(:,u) = temp;
             end
             for cond = 1:numel(availConditions)
                 condition = availConditions{cond};
@@ -89,7 +92,7 @@ function jpsthProcessByCondition()
                     continue;
                 end
                 fprintf('Doing JPSTH for condition [%s] - aligned on event [%s]...',condition,alignEvent);
-                [~,jpsthTable] = newJpsth(alignedSpikeTimeCellArray(trialNosByCondition,:),unitIdsInFile,alignedTimeWin,binWidth,coincidenceBinWidth);
+                [~,jpsthTable] = newJpsth(alignedSpkTimes(trialNosByCondition,:),unitIdsInFile,alignedTimeWin,binWidth,coincidenceBinWidth);
                 %verify cell-pairing in newJpsh with pairsTodo
                 jpsthStruct_pairKeys = strcat(jpsthTable.xCellId,'-',jpsthTable.yCellId);
                 pairsTodo_pairKeys = strcat(pairsTodo.X_cellIdInFile,'-',pairsTodo.Y_cellIdInFile);
@@ -106,9 +109,13 @@ function jpsthProcessByCondition()
                 sessionJpsths.(condition).(alignEvent) = jpsthTable;            
             end
         end
-        % Save all jpsth pairs for session
-        fprintf('Saving JPSTH fo all pairs for session [%s]\n',sessionName);
-        save(fullfile(jpsthResultsDir,[sessionName '_JPSTH']),'-struct','sessionJpsths');
+        if saveFig
+            % Save all jpsth pairs for session
+            fprintf('Saving JPSTH fo all pairs for session [%s]\n',sessionName); %#ok<UNRCH>
+            save(fullfile(jpsthResultsDir,[sessionName '_JPSTH']),'-v7.3','-struct','sessionJpsths');
+        else
+            fprintf('Done JPSTH fo all pairs for session [%s]\n',sessionName);
+        end
     end
     fprintf('Done...\n');
 end
