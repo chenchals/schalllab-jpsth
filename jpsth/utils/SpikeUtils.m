@@ -10,22 +10,9 @@ classdef SpikeUtils
             
             nTrials = size(alignedSpikesX,1);
             
-            outArg.xRasters = SpikeUtils.rasters(alignedSpikesX,timeWin);
-            outArg.yRasters = SpikeUtils.rasters(alignedSpikesY,timeWin);
             xPsth = SpikeUtils.psth(alignedSpikesX,binWidth,timeWin);
             yPsth = SpikeUtils.psth(alignedSpikesY,binWidth,timeWin);
-            outArg.xPsthBins = xPsth.psthBins;
-            outArg.xSpikeCounts = xPsth.spikeCounts;
-            outArg.xPsth = xPsth.psth;
-            outArg.xPsthStd = xPsth.psthStd;
-            outArg.yPsthBins = yPsth.psthBins;
-            outArg.ySpikeCounts = yPsth.spikeCounts;
-            outArg.yPsth = yPsth.psth;
-            outArg.yPsthStd = yPsth.psthStd;
-            outArg.nTrials = nTrials;
-            outArg.binWidth = binWidth;
-            outArg.coincidenceBins = coincidenceBins;
-            outArg.timeBins = {timeWin(1):binWidth:timeWin(2)};
+            timeBins = timeWin(1)+binWidth/2:binWidth:timeWin(2)-binWidth/2;
             
             % Cross correlation histogram for -lag:lag bins of JPSTH
             fx_xcorrh = @(jpsth,lagBins)...
@@ -37,23 +24,54 @@ classdef SpikeUtils
             
             % JPSTH Equations from Aertsen et al. 1989
             % Note bins [1,1] is top-left and [n,n] is bottom-right
-            outArg.rawJpsth = (outArg.xSpikeCounts'*outArg.ySpikeCounts)/(nTrials*binWidth^2); % Eq. 3
-            predicted = outArg.xPsth' * outArg.yPsth;			           % Eq. 4
-            unnormalizedJpsth = outArg.rawJpsth - predicted;             % Eq. 5
-            normalizer = outArg.xPsthStd' * outArg.yPsthStd;                           % Eq. 7a
-            outArg.normJpsth = unnormalizedJpsth ./ normalizer;          % Eq. 9
-            outArg.normJpsth(isnan(outArg.normJpsth)) = 0;
+            rawJpsth = (xPsth.spikeCounts'*yPsth.spikeCounts)/nTrials; % Eq. 3
+            predicted = xPsth.psth' * yPsth.psth;			           % Eq. 4
+            unnormalizedJpsth = rawJpsth - predicted;             % Eq. 5
+            normalizer = xPsth.psthStd' * yPsth.psthStd;                           % Eq. 7a
+            normJpsth = unnormalizedJpsth ./ normalizer;          % Eq. 9
+            normJpsth(isnan(normJpsth)) = 0;
             % lagBins for xCorr
-            outArg.xCorrHist = fx_xcorrh(outArg.normJpsth,floor(numel(outArg.timeBins)/2));
+            xCorrHist = fx_xcorrh(normJpsth,floor(numel(timeBins)/2));
             % Coincidence Hist
-            outArg.coinHist = fx_coinh(outArg.normJpsth,coincidenceBins);
+            coinHist = fx_coinh(normJpsth,coincidenceBins);
+            
+            % Create output structure
+            
+            temp = SpikeUtils.rasters(alignedSpikesX,timeWin);
+            outArg.rasterBins = {temp.rasterBins};
+            outArg.xRasters = {temp.rasters};
+            temp = SpikeUtils.rasters(alignedSpikesY,timeWin);
+            outArg.yRasters = {temp.rasters};            
+            outArg.xPsthBins = {xPsth.psthBins};
+            outArg.xPsth = {xPsth.psth};
+            outArg.xPsthStd = {xPsth.psthStd};
+            outArg.yPsthBins = {yPsth.psthBins};
+            outArg.yPsth = {yPsth.psth};
+            outArg.yPsthStd = {yPsth.psthStd};
+            outArg.normalizedJpsth = normJpsth;
+            outArg.xCorrHist = xCorrHist;
+            outArg.coincidenceHist = coinHist;
+            outArg.xSpikeCounts = {xPsth.spikeCounts};
+            outArg.ySpikeCounts = {yPsth.spikeCounts};
+            outArg.rawJpsth = rawJpsth;
+            % If single trial then these values are scalar
+            outArg.predictedJpsth = predicted; % same as outerProduct
+            if numel(predicted)==1
+                outArg.predictedJpsth = {predicted};
+            end            
+            outArg.normalizer = normalizer;
+            if numel(normalizer)==1
+                outArg.normalizer = {normalizer};
+            end
         end
         
         function outArg = jeromiahJpsth(alignedSpikesX, alignedSpikesY, timeWin, binWidth, coincidenceBinWidth)
             %JEROMIAHJPSTH Compute JPSTH using previous methods
             xCounts = spikeCounts(SpikeUtils.cellArray2mat(alignedSpikesX),timeWin,binWidth);
             yCounts = spikeCounts(SpikeUtils.cellArray2mat(alignedSpikesY),timeWin,binWidth);
-            outArg = jpsth(xCounts,yCounts,coincidenceBinWidth);
+            outArg = jpsth_jer(xCounts,yCounts,coincidenceBinWidth);
+            outArg.xCounts = xCounts;
+            outArg.yCounts = yCounts;
         end
         
         function outArg = alignSpikeTimes(spikes, alignTime, varargin)
@@ -112,13 +130,13 @@ classdef SpikeUtils
             %RASTERS Construct an instance of this class
             %   outArg is a logical array.  Bins are *delays* 1 ms apart,
             %   and rasters will contain *at most* 1 spike per bin
-            minTrialIsi = cell2mat(arrayfun(@(x) min(diff(x{1})),cellSpikeTimes,'UniformOutput',false));
+            minTrialIsi = cell2mat(arrayfun(@(x) min([diff(x{1}) Inf]),cellSpikeTimes,'UniformOutput',false));
             if sum(minTrialIsi<1) > 0 % No of trials where spikes occur closer than 1 millisecond
                 warning('Some spikes occur within 1 millisec in [%d] trials. ...Multiple spikes occuring within 1 millisec are treated as 1.', ...
                     sum(minTrialIsi<1));
             end
-            binEdges = min(timeWin)-0.5 : max(timeWin)+0.5;
-            outArg.rasters = cell2mat(cellfun(@(x) logical(histcounts(x,'BinEdges',binEdges)),...
+            binCenters = min(timeWin)-0.5 : max(timeWin)+0.5;
+            outArg.rasters = cell2mat(cellfun(@(x) logical(hist(x,binCenters)),...
                 cellSpikeTimes,'UniformOutput',false));
             outArg.rasterBins = min(timeWin):max(timeWin);
         end
@@ -132,13 +150,16 @@ classdef SpikeUtils
             %   timeWin: [minTime maxTime] for PSTH
             %   fx:  Built-in function-handle to be used for PSTH. Valid
             %        args are: @nanmean, @nanstd, @nanvar
+            
+            binCenters = min(timeWin)-binWidth/2:binWidth:max(timeWin)+binWidth/2;
             outArg.psthBins = min(timeWin):binWidth:max(timeWin);
-            binEdges = min(timeWin)-binWidth/2:binWidth:max(timeWin)+binWidth/2;
-            outArg.spikeCounts = cell2mat(cellfun(@(x) histcounts(x,'BinEdges',binEdges),...
+            outArg.spikeCountsMy = cell2mat(cellfun(@(x) hist(x,binCenters),...
                 cellSpikeTimes,'UniformOutput',false));
-            outArg.psth = mean(outArg.spikeCounts)./binWidth;
-            outArg.psthStd = std(outArg.spikeCounts)./binWidth;
-            outArg.psthVar = var(outArg.spikeCounts)./binWidth;
+            outArg.spikeCounts = cell2mat(cellfun(@(x) hist(x,binCenters),...
+                cellSpikeTimes,'UniformOutput',false));            
+            outArg.psth = mean(outArg.spikeCounts);
+            outArg.psthStd = std(outArg.spikeCounts);
+            outArg.psthVar = var(outArg.spikeCounts);
         end
         
         function outArg = jpsthXcorrHist(jpsth,lagBins)

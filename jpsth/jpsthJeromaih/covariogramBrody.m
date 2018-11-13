@@ -27,7 +27,7 @@
 % You should have received a copy of the GNU General Public License
 % along with JPSTH Toolbox.  If not, see <http://www.gnu.org/licenses/>.
 
-function [thisCovariogram, sigHigh, sigLow] = covariogramBrody(spike_1, spike_2, p1, p2, s1, s2, lag)
+function [thisCovariogram, sigHigh, sigLow, shuffleCorrector, crossCorr] = covariogramBrody(spike_1, spike_2, p1, p2, s1, s2, lag)
     % warn user that they should use compiled version
     warning('JPSTH:compileMex', ...
     		['You are using the MATLAB version of covariogramBrody()\n' ...

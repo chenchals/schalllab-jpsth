@@ -1,145 +1,131 @@
 function processByCondition()
 
-    saveFig = true;    
-    rootDataDir = '/Volumes/schalllab/data';
-    rootAnalysisDir = '/Volumes/schalllab/Users/Chenchal/JPSTH';
-    jpsthResultsDir = fullfile(rootAnalysisDir,'FigsBinWidth_1');
-    if ~exist(jpsthResultsDir, 'dir')
-        mkdir(jpsthResultsDir);
-    end
-    %
-    binWidth = 1;% for JPSTH computations
-    coincidenceBins = 5;
-    % Info files
-    jpshPairsFile = fullfile(rootAnalysisDir,'JPSTH_PAIRS_CellInfoDB.mat');
-    trialTypesFile = fullfile(rootAnalysisDir,'TrialTypesDB.mat');
-    trialEventTimesFile = fullfile(rootAnalysisDir,'TrialEventTimesDB.mat');
-    % Setup time windows for different event time alignment, the field names
-    % SHALL correspond to column names for trialEventTimes below.
-    alignEvents = {'CueOn';'SaccadePrimary';'RewardOn'};
-    % aligned on CueOn
-    timeWin.(alignEvents{1}) = [-700 400];
-    % aligned on SaccadePrimary
-    timeWin.(alignEvents{2}) = [-300 300];
-    % aligned on RewardOn
-    timeWin.(alignEvents{3})= [-400 400];
-    %% Load all JPSTH pair information
-    % load variable: JpsthPairsCellInfo
-    jpsthCellPairs = load(jpshPairsFile);
-    jpsthCellPairs = jpsthCellPairs.JpsthPairCellInfoDB;
-    jpsthCellPairs.folder = cellfun(@(x) fullfile(rootDataDir,...
-                                regexprep(x(1),{'D','E'},{'Darwin','Euler'}),'SAT/Matlab'),...
-                                jpsthCellPairs.datafile,'UniformOutput',false);
-    sessFiles = jpsthCellPairs.datafile;
-    pairUids = jpsthCellPairs.Pair_UID;
-    rowIdsOfPairsBySession = arrayfun(@(x) find(contains(sessFiles,x)), unique(sessFiles),'UniformOutput',false);
-    sessions = regexprep(unique(sessFiles),'-RH_.*mat','');
+saveFig = true;
+%
+binWidth = 5;% for JPSTH computations
+coincidenceBins = 5;
+rootDataDir = '/Volumes/schalllab/data';
+rootAnalysisDir = '/Volumes/schalllab/Users/Chenchal/JPSTH';
+jpsthResultsDir = fullfile(rootAnalysisDir,['FigsBinWidth' num2str(binWidth,'_%d')]);
+if ~exist(jpsthResultsDir, 'dir')
+    mkdir(jpsthResultsDir);
+end
 
-    %% Process each cell pair for all available conditions
-    % for each condition show JPSTH after aligning on all timeWIns specified
-    % TrialTypes
-    trialTypes = load(trialTypesFile);
-    trialTypes = trialTypes.TrialTypesDB;
-    %retain only sesisons which have jpsth pairs
-    trialTypes = trialTypes(cellfun(@(x) find(strcmpi(trialTypes.session, x)),sessions),:);
-    % (Accurate|Fast)*(Correct|ErrorHold|ErrorChoice|ErrorTiming|ErrorNoSaccade)
-    availConditions = regexp(trialTypes.Properties.VariableNames,'(Accurate.+)|(Fast.+)','match');
-    availConditions = [availConditions{:}]';
-    % TrialEventTimes
-    trialEventTimes = load(trialEventTimesFile);
-    trialEventTimes = trialEventTimes.TrialEventTimesDB;
-    %retain only sesisons which have jpsth pairs
-    trialEventTimes = trialEventTimes(cellfun(@(x) find(strcmpi(trialEventTimes.session, x)),sessions),:);
-    % (CueOn|FixAcquisition|TargetDeadline|SaccadePrimaryTempo|ToneOn|RewardOn|SaccadePrimary)
-    availEventTimes = regexp(trialEventTimes.Properties.VariableNames,'.*$(?<!^session)','match');
-    availEventTimes = [availEventTimes{:}]';
-    % Other variables to load from datafile
-    loadOtherVars = [];
+% Info files
+jpshPairsFile = fullfile(rootAnalysisDir,'JPSTH_PAIRS_CellInfoDB.mat');
+trialTypesFile = fullfile(rootAnalysisDir,'TrialTypesDB.mat');
+trialEventTimesFile = fullfile(rootAnalysisDir,'TrialEventTimesDB.mat');
+% Setup time windows for different event time alignment, the field names
+% SHALL correspond to column names for trialEventTimes below.
+alignEvents = {'CueOn';'SaccadePrimary';'RewardOn'};
+% aligned on CueOn
+timeWin.(alignEvents{1}) = [-700 400];
+% aligned on SaccadePrimary
+timeWin.(alignEvents{2}) = [-300 300];
+% aligned on RewardOn
+timeWin.(alignEvents{3})= [-400 400];
+%% Load all JPSTH pair information
+% load variable: JpsthPairsCellInfo
+jpsthCellPairs = load(jpshPairsFile);
+jpsthCellPairs = jpsthCellPairs.JpsthPairCellInfoDB;
+jpsthCellPairs.folder = cellfun(@(x) fullfile(rootDataDir,...
+    regexprep(x(1),{'D','E'},{'Darwin','Euler'}),'SAT/Matlab'),...
+    jpsthCellPairs.datafile,'UniformOutput',false);
+sessFiles = jpsthCellPairs.datafile;
+rowIdsOfPairsBySession = arrayfun(@(x) find(contains(sessFiles,x)), unique(sessFiles),'UniformOutput',false);
+sessions = regexprep(unique(sessFiles),'-RH_.*mat','');
 
-    %% process all paris by session
-    for s = 1:numel(rowIdsOfPairsBySession)
-        sessionJpsths = struct();
-        pairsTodo = jpsthCellPairs(rowIdsOfPairsBySession{s},:);  
-        nPairs = size(pairsTodo,1);
-        unitIdsInFile = unique([pairsTodo.X_cellIdInFile;pairsTodo.Y_cellIdInFile]);
-        file2load = fullfile(pairsTodo.folder{1},pairsTodo.datafile{1});
-        [~,sessionName] = fileparts(file2load);
-        fprintf('\nDoing JPSTH for session [%s].......\n',sessionName);
-        vars2load = [loadOtherVars;unitIdsInFile];
-        SessionUnits = load(file2load,vars2load{:});   
-        nTrials = size(trialEventTimes.CueOn{s},1);
-        nUnits = numel(unitIdsInFile);  
-         % Align all spike times Event times to the align Events  
-        for a = 1:numel(alignEvents)
-            alignEvent = alignEvents{a};
-            alignedTimeWin = timeWin.(alignEvent); 
-            if strcmpi(alignEvent,'CueOn')
-                alignTime = trialEventTimes.CueOn{s};
+%% Process each cell pair for all available conditions
+% for each condition show JPSTH after aligning on all timeWIns specified
+% TrialTypes
+trialTypes = load(trialTypesFile);
+trialTypes = trialTypes.TrialTypesDB;
+%retain only sesisons which have jpsth pairs
+trialTypes = trialTypes(cellfun(@(x) find(strcmpi(trialTypes.session, x)),sessions),:);
+% (Accurate|Fast)*(Correct|ErrorHold|ErrorChoice|ErrorTiming|ErrorNoSaccade)
+availConditions = regexp(trialTypes.Properties.VariableNames,'(Accurate.+)|(Fast.+)','match');
+availConditions = [availConditions{:}]';
+% TrialEventTimes
+trialEventTimes = load(trialEventTimesFile);
+trialEventTimes = trialEventTimes.TrialEventTimesDB;
+%retain only sesisons which have jpsth pairs
+trialEventTimes = trialEventTimes(cellfun(@(x) find(strcmpi(trialEventTimes.session, x)),sessions),:);
+% (CueOn|FixAcquisition|TargetDeadline|SaccadePrimaryTempo|ToneOn|RewardOn|SaccadePrimary)
+% availEventTimes = regexp(trialEventTimes.Properties.VariableNames,'.*$(?<!^session)','match');
+
+%% process all paris by session
+for s = numel(rowIdsOfPairsBySession):-1:1
+    pairsTodo = jpsthCellPairs(rowIdsOfPairsBySession{s},:);
+    nPairs = size(pairsTodo,1);
+    file2load = fullfile(pairsTodo.folder{1},pairsTodo.datafile{1});
+    [~,sessionName] = fileparts(file2load);
+    sessionTrialEventTimes = trialEventTimes(s,:);
+    sessionTrialTypes = trialTypes(s,:);
+    fprintf('\nDoing JPSTH for session [%s].......\n',sessionName);
+    % for each pair of cells
+    tempConditions = struct();
+    for pair = 1:nPairs
+        currPair = pairsTodo(pair,:);
+        XCellId = currPair.X_cellIdInFile{1};
+        YCellId = currPair.Y_cellIdInFile{1};
+        pairFilename = char(join({currPair.Pair_UID{1},sessionName,XCellId,YCellId},'_'));
+        fprintf('Processing Pair : %s...\n',pairFilename);
+        units = load(file2load,XCellId,YCellId);
+        for cond = 1:numel(availConditions)
+            condition = availConditions{cond};
+            trialNosByCondition = find(sessionTrialTypes.(condition){1});
+            tempJpsth = table();
+            if isempty(trialNosByCondition)
+                tempConditions.(condition) = [];
             else
-                alignTime = trialEventTimes.CueOn{s} + trialEventTimes.(alignEvent){s};
-            end       
-            alignedSpkTimes = struct();
-            for u = 1:nUnits
-                unitId = unitIdsInFile{u};
-                alignedSpkTimes.(unitId) = SpikeUtils.alignSpikeTimes(SessionUnits.(unitId),...
-                                       alignTime, alignedTimeWin);
-            end
-            % for each pair of cells 
-            for pair = 1:nPairs
-                currPair = pairsTodo(pair,:);
-                XCellId = currPair.X_cellIdInFile{1}; 
-                YCellId = currPair.Y_cellIdInFile{1}; 
-                for cond = 1:numel(availConditions)
-                    condition = availConditions{cond};
-                    trialNosByCondition = find(trialTypes.(condition){s});
-                    if isempty(trialNosByCondition)
-                        sessionJpsths.(condition).(alignEvent) = [];
-                        continue;
+                for eventId = 1:numel(alignEvents)
+                    alignedEvent = alignEvents{eventId};
+                    alignedTimeWin = timeWin.(alignedEvent);
+                    alignTime = sessionTrialEventTimes.CueOn{1};
+                    if isempty(strcmpi(alignedEvent,'CueOn'))
+                        alignTime = alignTime + sessionTrialEventTimes.(alignedEvent){1};
                     end
-                    XAligned = alignedSpkTimes.(XCellId)(trialNosByCondition);
-                    YAligned = alignedSpkTimes.(YCellId)(trialNosByCondition);
+                    XAligned = SpikeUtils.alignSpikeTimes(units.(XCellId),alignTime, alignedTimeWin);
+                    YAligned = SpikeUtils.alignSpikeTimes(units.(YCellId),alignTime, alignedTimeWin);
                     
-                    myJpsth = SpikeUtils.jpsth(XAligned, YAligned, alignedTimeWin, binWidth, coincidenceBins);
-                    jer = SpikeUtils.jeromiahJpsth(XAligned, YAligned, alignedTimeWin, binWidth, coincidenceBins);
-
+                    XAligned = XAligned(trialNosByCondition,:);
+                    YAligned = YAligned(trialNosByCondition,:);
+                    
+                    temp = SpikeUtils.jpsth(XAligned, YAligned, alignedTimeWin, binWidth, coincidenceBins);
+                    %try
+                    tempJpsth(eventId,:) = struct2table(temp,'AsArray',true);
+                    %                     jer = SpikeUtils.jeromiahJpsth(XAligned, YAligned, alignedTimeWin, binWidth, coincidenceBins);
+                    %catch me
+                    %    me
+                    %end
+                    
+                    opts(eventId,1).xCellSpikeTimes = {XAligned}; %#ok<*AGROW>
+                    opts(eventId,1).yCellSpikeTimes = {YAligned};
+                    opts(eventId,1).trialNosByCondition = {trialNosByCondition};
+                    opts(eventId,1).alignedEvent = {alignedEvent};
+                    opts(eventId,1).alignedTimeWin = {alignedTimeWin};
+                    opts(eventId,1).alignTime = {alignTime(trialNosByCondition)};
+                    opts(eventId,1).binWidth = binWidth;
+                    opts(eventId,1).coincidenceBins = coincidenceBins;
                 end
                 
+                tempJpsth.Properties.RowNames = alignEvents;
+                tempConditions.(condition) = [tempJpsth struct2table(opts,'AsArray',true)];
             end
-            
-            
-            
-            for cond = 1:numel(availConditions)
-                condition = availConditions{cond};
-                trialNosByCondition = find(trialTypes.(condition){s}); 
-                if isempty(trialNosByCondition)
-                    sessionJpsths.(condition).(alignEvent) = [];
-                    continue;
-                end
-                fprintf('Doing JPSTH for condition [%s] - aligned on event [%s]...',condition,alignEvent);
-                [~,jpsthTable] = newJpsth(alignedSpkTimes(trialNosByCondition,:),unitIdsInFile,alignedTimeWin,binWidth,coincidenceBins);
-                %verify cell-pairing in newJpsh with pairsTodo
-                jpsthStruct_pairKeys = strcat(jpsthTable.xCellId,'-',jpsthTable.yCellId);
-                pairsTodo_pairKeys = strcat(pairsTodo.X_cellIdInFile,'-',pairsTodo.Y_cellIdInFile);
-                % the number of pairs match AND all the rows match as-is or
-                % one of the arrays conatin all items may be in a different order?
-                if isequaln(jpsthStruct_pairKeys,pairsTodo_pairKeys) || ...
-                        sum(contains(jpsthStruct_pairKeys,pairsTodo_pairKeys)) == numel(jpsthStruct_pairKeys)
-                    jpsthTable.sortIdxs = cellfun(@(x) find(contains(pairsTodo_pairKeys,x)),jpsthStruct_pairKeys);
-                    jpsthTable =  [pairsTodo sortrows(jpsthTable,'sortIdxs')];
-                else
-                    error('*****Number of pairs done by newJpsth does not match the pairsToDo\n******\n');
-                end
-                jpsthTable.trialNosByCondition(:,1) = {trialNosByCondition};
-                sessionJpsths.(condition).(alignEvent) = jpsthTable;            
-            end
-        end
-        if saveFig
-            % Save all jpsth pairs for session
-            fprintf('Saving JPSTH fo all pairs for session [%s]\n',sessionName); %#ok<UNRCH>
-            save(fullfile(jpsthResultsDir,[sessionName '_JPSTH']),'-v7.3','-struct','sessionJpsths');
-        else
-            fprintf('Done JPSTH fo all pairs for session [%s]\n',sessionName);
-        end
+        end % for condition
+        % Next Pair
+        % Save analysis for pair here...
+        tempConditions.cellPairInfo = currPair;
+        oFn = fullfile(jpsthResultsDir,[pairFilename '.mat']);
+        fprintf('Saving processed pair : %s\n',oFn);
+        save(oFn,'-v7.3','-struct','tempConditions');
     end
-    fprintf('Done...\n');
+end
+if saveFig
+    % Save all jpsth pairs for session
+    fprintf('Saving JPSTH fo all pairs for session [%s]\n',sessionName); 
+    save(fullfile(jpsthResultsDir,[sessionName '_JPSTH']),'-v7.3','-struct','sessionJpsths');
+else
+    fprintf('Done JPSTH fo all pairs for session [%s]\n',sessionName); %#ok<UNRCH>
+end
 end
