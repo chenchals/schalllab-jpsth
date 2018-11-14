@@ -95,7 +95,7 @@ for s = numel(rowIdsOfPairsBySession):-1:1
                     
                     temp = SpikeUtils.jpsth(XAligned, YAligned, alignedTimeWin, binWidth, coincidenceBins);
                     tempJpsth(eventId,:) = struct2table(temp,'AsArray',true);
-                    %                     jer = SpikeUtils.jeromiahJpsth(XAligned, YAligned, alignedTimeWin, binWidth, coincidenceBins);                    
+                    %jer = SpikeUtils.jeromiahJpsth(XAligned, YAligned, alignedTimeWin, binWidth, coincidenceBins);                    
                     opts(eventId,1).xCellSpikeTimes = {XAligned}; %#ok<*AGROW>
                     opts(eventId,1).yCellSpikeTimes = {YAligned};
                     opts(eventId,1).trialNosByCondition = {trialNosByCondition};
