@@ -17,13 +17,13 @@ nBins = size(jp,1);
 % Aertsen
 lags = -(abs(lagInBins)):abs(lagInBins);
 coinMat = zeros(nBins,numel(lags));
-for i = lags   
-   d = diag(jp,i)';
+for ii = lags   
+   d = diag(jp,ii)';
    if isempty(d)
       coinMat = [];
       return
    end
-   coinMat(abs(i)+1:end,lags==i) = d;
+   coinMat(abs(ii)+1:end,lags==ii) = d;
 end  
    coinh = [(1:nBins)' sum(coinMat,2)];
 

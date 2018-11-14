@@ -20,15 +20,19 @@ classdef SpikeUtils
                 -abs(lagBins):abs(lagBins))]';
             % Coincidence Histogram
             fx_coinh = @getCoincidence;
-
-            
+           
             % JPSTH Equations from Aertsen et al. 1989
             % Note bins [1,1] is top-left and [n,n] is bottom-right
-            rawJpsth = (xPsth.spikeCounts'*yPsth.spikeCounts)/nTrials; % Eq. 3
-            predicted = xPsth.psth' * yPsth.psth;			           % Eq. 4
-            unnormalizedJpsth = rawJpsth - predicted;             % Eq. 5
-            normalizer = xPsth.psthStd' * yPsth.psthStd;                           % Eq. 7a
-            normJpsth = unnormalizedJpsth ./ normalizer;          % Eq. 9
+            % Eq. 3
+            rawJpsth = (xPsth.spikeCounts'*yPsth.spikeCounts)/nTrials;
+            % Eq. 4
+            predicted = xPsth.psth' * yPsth.psth;	
+            % Eq. 5
+            unnormalizedJpsth = rawJpsth - predicted; 
+            % Eq. 7a
+            normalizer = xPsth.psthStd' * yPsth.psthStd; 
+            % Eq. 9
+            normJpsth = unnormalizedJpsth ./ normalizer;          
             normJpsth(isnan(normJpsth)) = 0;
             % lagBins for xCorr
             xCorrHist = fx_xcorrh(normJpsth,floor(numel(timeBins)/2));
