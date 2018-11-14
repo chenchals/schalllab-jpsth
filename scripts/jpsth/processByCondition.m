@@ -6,7 +6,7 @@ binWidth = 5;% for JPSTH computations
 coincidenceBins = 5;
 rootDataDir = '/Volumes/schalllab/data';
 rootAnalysisDir = '/Volumes/schalllab/Users/Chenchal/JPSTH';
-jpsthResultsDir = fullfile(rootAnalysisDir,['FigsBinWidth' num2str(binWidth,'_%d')]);
+jpsthResultsDir = fullfile(rootAnalysisDir,['FigsBinWidth' num2str(binWidth,'_%dB')]);
 if ~exist(jpsthResultsDir, 'dir')
     mkdir(jpsthResultsDir);
 end
@@ -64,11 +64,13 @@ for s = numel(rowIdsOfPairsBySession):-1:1
     fprintf('\nDoing JPSTH for session [%s].......\n',sessionName);
     % for each pair of cells
     tempConditions = struct();
-    for pair = 1:nPairs
+    for pair = nPairs:-1:1
         currPair = pairsTodo(pair,:);
         XCellId = currPair.X_cellIdInFile{1};
         YCellId = currPair.Y_cellIdInFile{1};
-        pairFilename = char(join({currPair.Pair_UID{1},sessionName,XCellId,YCellId},'_'));
+        pairFilename = char(join({currPair.Pair_UID{1},sessionName,...
+            XCellId,currPair.X_area{1},...
+            YCellId,currPair.Y_area{1}},'_'));
         fprintf('Processing Pair : %s...\n',pairFilename);
         units = load(file2load,XCellId,YCellId);
         for cond = 1:numel(availConditions)
@@ -92,13 +94,8 @@ for s = numel(rowIdsOfPairsBySession):-1:1
                     YAligned = YAligned(trialNosByCondition,:);
                     
                     temp = SpikeUtils.jpsth(XAligned, YAligned, alignedTimeWin, binWidth, coincidenceBins);
-                    %try
                     tempJpsth(eventId,:) = struct2table(temp,'AsArray',true);
-                    %                     jer = SpikeUtils.jeromiahJpsth(XAligned, YAligned, alignedTimeWin, binWidth, coincidenceBins);
-                    %catch me
-                    %    me
-                    %end
-                    
+                    %                     jer = SpikeUtils.jeromiahJpsth(XAligned, YAligned, alignedTimeWin, binWidth, coincidenceBins);                    
                     opts(eventId,1).xCellSpikeTimes = {XAligned}; %#ok<*AGROW>
                     opts(eventId,1).yCellSpikeTimes = {YAligned};
                     opts(eventId,1).trialNosByCondition = {trialNosByCondition};
@@ -113,19 +110,11 @@ for s = numel(rowIdsOfPairsBySession):-1:1
                 tempConditions.(condition) = [tempJpsth struct2table(opts,'AsArray',true)];
             end
         end % for condition
-        % Next Pair
-        % Save analysis for pair here...
+        % Save and do next Pair
         tempConditions.cellPairInfo = currPair;
         oFn = fullfile(jpsthResultsDir,[pairFilename '.mat']);
         fprintf('Saving processed pair : %s\n',oFn);
         save(oFn,'-v7.3','-struct','tempConditions');
     end
-end
-if saveFig
-    % Save all jpsth pairs for session
-    fprintf('Saving JPSTH fo all pairs for session [%s]\n',sessionName); 
-    save(fullfile(jpsthResultsDir,[sessionName '_JPSTH']),'-v7.3','-struct','sessionJpsths');
-else
-    fprintf('Done JPSTH fo all pairs for session [%s]\n',sessionName); %#ok<UNRCH>
-end
+end %for session group
 end
