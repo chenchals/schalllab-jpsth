@@ -3,12 +3,20 @@
 trialTypesDb = load('/Volumes/schalllab/Users/Chenchal/JPSTH/TrialTypesDB.mat');
 singletonLocsBySession = trialTypesDb.TrialTypesDB(:,{'session','SingletonLoc'});
 figDir = '/Volumes/schalllab/Users/Chenchal/JPSTH/FigsBinWidth_5';%
+tuneDir = fullfile(figDir,'tuning');
+if ~exist(tuneDir,'dir')
+    mkdir(tuneDir);
+end
+plotlineStyle.FEF = 'k--';
+plotlineStyle.SEF = 'k:';
+plotlineStyle.SC = 'k-';
+
 files = dir(fullfile(figDir,'PAIR*.mat'));
 fns = {files.name}';
 files = strcat({files.folder}',filesep,{files.name}');
 conditions = {'AccurateCorrect'; 'FastCorrect'};
-cueMeanWindow = [50 250];
-saccMeanWindow = [-150 50];
+cueMeanWindow = [50 200];
+saccMeanWindow = [-100 100];
 nPairs = numel(files);
 
 H_Plots = createFigureTemplate();
@@ -25,6 +33,8 @@ for cp = 1:nPairs
     infoText{3} = {'area';pairData.cellPairInfo.X_area{1};pairData.cellPairInfo.Y_area{1}};   
     infoText{4} = {'RF';['[' num2str(pairData.cellPairInfo.X_RF{1}) ']'];['[' num2str(pairData.cellPairInfo.Y_RF{1}) ']']};
     infoText{5} = {'MF';['[' num2str(pairData.cellPairInfo.X_MF{1}) ']'];['[' num2str(pairData.cellPairInfo.Y_MF{1}) ']']};
+    
+    lineStyles = {plotlineStyle.(pairData.cellPairInfo.X_area{1}); plotlineStyle.(pairData.cellPairInfo.Y_area{1})};
     
     % Aggregate all corrects
     binWidth = pairData.AccurateCorrect{'CueOn','binWidth'};
@@ -57,19 +67,22 @@ for cp = 1:nPairs
     %% Plot tuning
     nextPlot = nextPlot + 1;
     axes(H_Plots(nextPlot));
-    %plot([0:7],[xCueOnMeanFrByLoc;yCueOnMeanFrByLoc]);
-    plot([0:7],[xSaccPrimaryMeanFrByLoc;ySaccPrimaryMeanFrByLoc]);
-    xlabel('Singleton Location Index', 'FontSize', 10, 'FontWeight','bold');
-    ylabel(['Mean FR in [' num2str(saccMeanWindow) '] ms window'], 'FontSize', 10, 'FontWeight','bold');
+    plot([0:7],xCueOnMeanFrByLoc,lineStyles{1},'LineWidth',2);
+    hold on
+    plot([0:7],yCueOnMeanFrByLoc,lineStyles{2},'LineWidth',2);
+    hold off
+    %plot([0:7],[xSaccPrimaryMeanFrByLoc;ySaccPrimaryMeanFrByLoc]);
+    xlabel('Singleton Location Index', 'FontSize', 12, 'FontWeight','bold');
+    ylabel(['Mean FR in [' num2str(saccMeanWindow) '] ms window'], 'FontSize', 12, 'FontWeight','bold');
     for t = 1:5
-       text(t,max(ylim),infoText{:,t},'FontSize', 10, 'FontWeight','bold', 'VerticalAlignment','top');
+       text(t,max(ylim),infoText{:,t},'FontSize', 12, 'FontWeight','bold', 'VerticalAlignment','top');
     end
-    text(0.1,max(ylim)*0.95,cellPairInfo.Pair_UID,'FontSize', 10, 'FontWeight','bold','Interpreter','none');
-    drawnow;
+    text(range(xlim)/2,max(ylim),strcat(cellPairInfo.Pair_UID, ' : ', sessionName),'FontSize', 12, 'FontWeight','bold','Interpreter','none','VerticalAlignment','bottom','HorizontalAlignment','center');
+   drawnow;
 
     if mod(cp,12) == 0
         fileNum = fileNum +1;
-        fn = fullfile(figDir,num2str(fileNum,'Tuning_SaccPrim_alignes_%d'));
+        fn = fullfile(tuneDir,num2str(fileNum,'Tuning_CueOn_aligned_%d'));
         saveFigAs(fn);
         nextPlot = 0;
         arrayfun(@cla,H_Plots);
@@ -96,7 +109,7 @@ function [H_Plots] = createFigureTemplate()
     figureName='Burst Analyses';
 
     fontName = 'Arial';
-    fontSize = 6;
+    fontSize = 11;
     lineWidth = 0.05;
     screenWH=get(0,'ScreenSize');%pixels
     margin = 40;
