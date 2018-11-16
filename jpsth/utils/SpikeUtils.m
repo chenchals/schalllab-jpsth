@@ -5,15 +5,11 @@ classdef SpikeUtils
     %
     
     methods (Static, Access=public)
-        function outArg = jpsth(alignedSpikesX, alignedSpikesY, timeWin, binWidth, coincidenceBins)
-            
-            
-            nTrials = size(alignedSpikesX,1);
-            
+        function outArg = jpsth(alignedSpikesX, alignedSpikesY, timeWin, binWidth, coincidenceBins)            
+            nTrials = size(alignedSpikesX,1);           
             xPsth = SpikeUtils.psth(alignedSpikesX,binWidth,timeWin);
             yPsth = SpikeUtils.psth(alignedSpikesY,binWidth,timeWin);
-            timeBins = timeWin(1)+binWidth/2:binWidth:timeWin(2)-binWidth/2;
-            
+            timeBins = timeWin(1)+binWidth/2:binWidth:timeWin(2)-binWidth/2;            
             % Cross correlation histogram for -lag:lag bins of JPSTH
             fx_xcorrh = @(jpsth,lagBins)...
                 [-abs(lagBins):abs(lagBins);arrayfun(@(x) mean(diag(jpsth,x)),...
@@ -156,7 +152,7 @@ classdef SpikeUtils
             %        args are: @nanmean, @nanstd, @nanvar
             
             binCenters = min(timeWin)+binWidth/2:binWidth:max(timeWin)-binWidth/2;
-            outArg.psthBins = min(timeWin):binWidth:max(timeWin);
+            outArg.psthBins = min(timeWin)+binWidth/2:binWidth:max(timeWin)-binWidth/2;
             outArg.spikeCounts = cell2mat(cellfun(@(x) hist(x,binCenters),...
                 cellSpikeTimes,'UniformOutput',false));            
             outArg.psth = mean(outArg.spikeCounts);
