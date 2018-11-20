@@ -67,13 +67,13 @@ for cp = 1:nPairs
     %% Plot tuning
     nextPlot = nextPlot + 1;
     axes(H_Plots(nextPlot));
-    plot([0:7],xCueOnMeanFrByLoc,lineStyles{1},'LineWidth',2);
+    plot([0:7],xSaccPrimaryMeanFrByLoc,lineStyles{1},'LineWidth',2);
     hold on
-    plot([0:7],yCueOnMeanFrByLoc,lineStyles{2},'LineWidth',2);
+    plot([0:7],ySaccPrimaryMeanFrByLoc,lineStyles{2},'LineWidth',2);
     hold off
     %plot([0:7],[xSaccPrimaryMeanFrByLoc;ySaccPrimaryMeanFrByLoc]);
     xlabel('Singleton Location Index', 'FontSize', 12, 'FontWeight','bold');
-    ylabel(['Mean FR in [' num2str(saccMeanWindow) '] ms window'], 'FontSize', 12, 'FontWeight','bold');
+    ylabel(['Mean FR in [' num2str(saccMeanWindow) '] ms window (Saccade Primary)'], 'FontSize', 12, 'FontWeight','bold');
     for t = 1:5
        text(t,max(ylim),infoText{:,t},'FontSize', 12, 'FontWeight','bold', 'VerticalAlignment','top');
     end
@@ -82,7 +82,7 @@ for cp = 1:nPairs
 
     if mod(cp,12) == 0
         fileNum = fileNum +1;
-        fn = fullfile(tuneDir,num2str(fileNum,'Tuning_CueOn_aligned_%d'));
+        fn = fullfile(tuneDir,num2str(fileNum,'Tuning_SaccadePrimary_aligned_%02d'));
         saveFigAs(fn);
         nextPlot = 0;
         arrayfun(@cla,H_Plots);

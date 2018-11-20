@@ -35,18 +35,30 @@ function [darwinCellInfoDB, eulerCellInfoDB, satCellInfoDB] = createSATCellInfoD
     satCellInfoDB.cellNumForSession = ...
         cell2mat(cellfun(@(x) (1:sum(contains(satCellInfoDB.monkSessNo,x)))',...
         unique(satCellInfoDB.monkSessNo),'UniformOutput',false));
+    satCellInfoDB.nTrialsDET = cellfun(@str2num,temp.nTrials_SEARCH);
+    satCellInfoDB.nTrialsMG = cellfun(@str2num,temp.nTrials_SEARCH);
+    satCellInfoDB.nTrialsSearch = cellfun(@str2num,temp.nTrials_SEARCH);
+    satCellInfoDB.grid = temp.Grid;
+    satCellInfoDB.uStim = temp.uStim;
+    satCellInfoDB.impedence = temp.Impedence;
+    satCellInfoDB.depth = cellfun(@str2num,temp.Depth);
+    satCellInfoDB.depthZero = cellfun(@str2num,temp.Depth0,'UniformOutput',false);
+    satCellInfoDB.unit = temp.Unit;
     satCellInfoDB.cellIdInFile = temp.UnitName;
     satCellInfoDB.hemi = temp.Hemi;
-    satCellInfoDB.grid = temp.Grid;
     satCellInfoDB.area = temp.Area;
-    satCellInfoDB.depth = cellfun(@str2num,temp.Depth);
-    satCellInfoDB.nTrialsSearch = cellfun(@str2num,temp.nTrials_SEARCH);
     satCellInfoDB.unitFuncType = temp.UnitFxType;
     satCellInfoDB.visual = cellfun(@str2num,temp.Visual);
     satCellInfoDB.move = cellfun(@str2num,temp.Move);
     satCellInfoDB.fix = cellfun(@str2num,temp.Fixation);
     satCellInfoDB.RF = cellfun(@eval,temp.RF,'UniformOutput',false);
     satCellInfoDB.MF = cellfun(@eval,temp.MF,'UniformOutput',false);
+    satCellInfoDB.sessionNumber = cellfun(@str2num,temp.SessionNumber);
+    satCellInfoDB.neuronNumber = cellfun(@str2num,temp.NeuronNumber);
+    satCellInfoDB.isIncludeMED = temp.IsIncludeMED;
+    satCellInfoDB.isBSLNEffect = temp.IsBSLNEffect;
+    satCellInfoDB.isSATUseable = temp.IsSATUseable;
+    satCellInfoDB.isErrorResp = temp.IsErrorResp;     
     satCellInfoDB.notes = strcat('SESSION: ',temp.SessionNotes,' UNIT: ', temp.Notes);
     % Darwin
     darwinCellInfoDB = [satCellInfoDB(1:size(darwinCellInfoDB,1),1) darwinCellInfoDB];
@@ -60,8 +72,8 @@ function [darwinCellInfoDB, eulerCellInfoDB, satCellInfoDB] = createSATCellInfoD
     CellInfoDB = darwinCellInfoDB;
     save(fullfile(summaryFileDir,'DarwinCellInfoDB.mat'),'CellInfoDB');
     % Save CellInfoDB for Euler
-    CellInfoDB = darwinCellInfoDB;
-    save(fullfile(summaryFileDir,'DarwinCellInfoDB.mat'),'CellInfoDB');   
+    CellInfoDB = eulerCellInfoDB;
+    save(fullfile(summaryFileDir,'EulerCellInfoDB.mat'),'CellInfoDB');   
 end
 
 function [cellInfos] = parseRawExcel(excelSummaryFile, matfiles)
