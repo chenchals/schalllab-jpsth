@@ -7,6 +7,9 @@ function [darwinCellInfoDB, eulerCellInfoDB, satCellInfoDB] = createSATCellInfoD
     darwinSummaryFile = fullfile(summaryFileDir,'Darwin_SAT_colorRecode.xlsx');
     eulerSummaryFile = fullfile(summaryFileDir,'Euler_SAT_colorRecode.xlsx');
 
+    thomasSessionInfoFile = fullfile(summaryFileDir,'Thomas-Session-Info-SAT-JPSTH_CS.xlsx');
+    thomasSessionInfo = getThomasSessionInfo(thomasSessionInfoFile);
+    
     % Directory of translated Data files: .mat files
     darwinMatDir = fullfile(rootDataDir,'Darwin/SAT/Matlab');
     eulerMatDir = fullfile(rootDataDir,'Euler/SAT/Matlab');
@@ -30,6 +33,7 @@ function [darwinCellInfoDB, eulerCellInfoDB, satCellInfoDB] = createSATCellInfoD
     satCellInfoDB.UID = cellstr(num2str((1:size(temp,1))','UID_SAT_%04d'));
     satCellInfoDB.datafile = temp.SEARCH_matfile;
     satCellInfoDB.monk = cellfun(@(x) x(1),temp.SEARCH_matfile);
+    satCellInfoDB.sessionName = regexprep(satCellInfoDB.datafile,'-RH.*','');
     satCellInfoDB.sessionNo = cellfun(@str2num,temp.SessionNumber);    
     satCellInfoDB.monkSessNo = cellstr(strcat(satCellInfoDB.monk,arrayfun(@num2str,satCellInfoDB.sessionNo)));
     satCellInfoDB.cellNumForSession = ...
@@ -60,6 +64,23 @@ function [darwinCellInfoDB, eulerCellInfoDB, satCellInfoDB] = createSATCellInfoD
     satCellInfoDB.isSATUseable = temp.IsSATUseable;
     satCellInfoDB.isErrorResp = temp.IsErrorResp;     
     satCellInfoDB.notes = strcat('SESSION: ',temp.SessionNotes,' UNIT: ', temp.Notes);
+    
+    newColumns = {'matchId','Isolation','TrialsToRemove','ThomasRF','ThomasMF','ThomasVis','SignifElevatedBaseline',...
+                 'preSacDirErrAcc','preSacDirErrFast','preSacTimingErrAcc',...
+                 'preSacTimingErrFast','postSacTimingErrAcc','postSacTimingErrFast'};
+    
+    satCellInfoDB = addColumns(satCellInfoDB,newColumns);    
+        
+    matchIds = strcat(satCellInfoDB.sessionName,'-',satCellInfoDB.unit,'-',num2str(satCellInfoDB.sessionNo));
+    
+    matchIdx = find(contains(matchIds,thomasSessionInfo.matchId));
+    
+    
+    for ii = 1:numel(matchIdx)
+      satCellInfoDB(matchIdx(ii),newColumns) = thomasSessionInfo(ii,newColumns);        
+    end
+
+    
     % Darwin
     darwinCellInfoDB = [satCellInfoDB(1:size(darwinCellInfoDB,1),1) darwinCellInfoDB];
     % Euler
@@ -114,7 +135,7 @@ function [cellInfos] = parseRawExcel(excelSummaryFile, matfiles)
     cellInfos = [];
     for ii = 1:nSessions
         if ii < nSessions
-            sessionRows = sessionNameRows(ii):sessionNameRows(ii+1)-1;
+            sessionRows = sessionNameRows(ii):sessionNameRows(ii+1)-2;
         else
             sessionRows = sessionNameRows(ii):nRows;
         end
@@ -122,7 +143,7 @@ function [cellInfos] = parseRawExcel(excelSummaryFile, matfiles)
         tempSession = cell2table(temp(sessionRows(1),1:2),'VariableNames',{'SessionName', 'SessionNotes'});
         tempTaskTrials = cell2table(temp(sessionRows(2:4),1:2),'VariableNames',{'TaskName', 'NTrials'});
         tempTaskTrials = cell2table(tempTaskTrials{:,2}','VariableNames',strcat('nTrials_',tempTaskTrials{:,1})');
-    tempFiles = matfiles.name(~cellfun('isempty',regexp(matfiles.name,tempSession.SessionName,'match')));
+        tempFiles = matfiles.name(~cellfun('isempty',regexp(matfiles.name,tempSession.SessionName,'match')));
         tempTaskFiles = table();
         for t=1:numel(taskFileContains)
             task = taskFileContains{t};
@@ -142,7 +163,7 @@ function [cellInfos] = parseRawExcel(excelSummaryFile, matfiles)
 
         % process Unit information
         tempUnitTable = cell2table(temp(sessionRows(2:end),3:end),'VariableNames',colNames(3:end));
-        tempUnitTable(strcmpi(tempUnitTable.NeuronNumber,'NaN'),:) = [];
+        tempUnitTable(strcmpi(tempUnitTable.Unit,'NaN'),:) = [];
         tempUnitTable.Unit = regexprep(tempUnitTable.Unit,'^(\d[a-z])','0$1');
         tempUnitTable.UnitName = strcat('DSP',tempUnitTable.Unit);
         for c = 1:size(tempUnitTable,1)
@@ -150,6 +171,66 @@ function [cellInfos] = parseRawExcel(excelSummaryFile, matfiles)
         end
     end
 end
+
+
+function o = getThomasSessionInfo(filename)
+    colNames2Use = {'CellNo','SessNo','Session','Unit','Isolation',...
+        'TrialsToRemove','ThomasRF','ThomasMF','ThomasVis','SignifElevatedBaseline','preSacDirErrAcc','preSacDirErrFast',...
+        'preSacTimingErrAcc','preSacTimingErrFast','postSacTimingErrAcc','postSacTimingErrFast'};
+    % SEF
+    [~,~,DRaw] = xlsread(filename,'Da-SEF','A3:AF41');
+    [~,~,ERaw] = xlsread(filename,'Eu-SEF','A3:AF37');
+    DRaw = convert2table(DRaw, colNames2Use);
+    ERaw = convert2table(ERaw, colNames2Use);
+    % SC and FEF
+    [~,~,DRaw2] = xlsread(filename,'Da-SC-FEF','B1:Z53');
+    [~,~,ERaw2] = xlsread(filename,'Eu-SC','B1:Z8');
+    DRaw2 = convert2table(DRaw2, colNames2Use);
+    ERaw2 = convert2table(ERaw2, colNames2Use);
+    o = [DRaw;DRaw2;ERaw;ERaw2];
+    
+    o.TrialsToRemove = cellfun(@eval,o.TrialsToRemove,'UniformOutput',false);
+    o.ThomasRF = cellfun(@eval,o.ThomasRF,'UniformOutput',false);
+    o.ThomasMF = cellfun(@eval,o.ThomasMF,'UniformOutput',false);
+       
+    o.ThomasCellNo = o.CellNo;
+    o.CellNo = [];
+    o.Unit = regexprep(o.Unit,'^(\d[a-z])','0$1');
+    
+    o.matchId = strcat(o.Session,'-',o.Unit,'-',num2str(o.SessNo));
+    
+    o = sortrows(o,'matchId');
+    
+end
+
+function outTable = convert2table(excelCellArray, colsToUse)
+  vn = {excelCellArray{1,:}};
+  excelCellArray(1,:) = [];
+%   containsNumbers = cellfun(@isnumeric,excelCellArray);
+%   excelCellArray(containsNumbers) = cellfun(@num2str,excelCellArray(containsNumbers),'UniformOutput',false);
+  outTable = cell2table(excelCellArray,'VariableNames',vn);
+  outTable = outTable(:,intersect(colsToUse,vn));
+  otherCols = setdiff(colsToUse,vn);
+  outTable = addColumns(outTable,otherCols);
+end
+
+function outTable = addColumns(inTable,colsNames)
+  outTable =  inTable;
+  for ii = 1:numel(colsNames)
+      colName = colsNames{ii};
+      if contains('SignifElevatedBaseline',colName)
+          outTable.(colName) = repmat({'U'},size(outTable,1),1);
+      elseif contains('matchId',colName)
+          outTable.(colName) = repmat({'NoMatch'},size(outTable,1),1);
+      elseif sum(contains({'TrialsToRemove','ThomasRF','ThomasMF'},colName))
+          %outTable.(colName) = cell(size(outTable,1),1);
+          outTable.(colName) =repmat({[]},size(outTable,1),1);
+      else
+           outTable.(colName) = nan(size(outTable,1),1);
+      end
+  end
+end
+
 
 
 
