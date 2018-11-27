@@ -38,6 +38,9 @@ trialEventTimesFile = fullfile(rootAnalysisDir,'TrialEventTimesDB.mat');
 % SHALL correspond to column names for trialEventTimes below.
 alignEventTimeWin = containers.Map;
 alignEventTimeWin('CueOn') = [-700 400];
+alignEventTimeWin('SaccadePrimary') = [-300 300];
+alignEventTimeWin('RewardOn') = [-400 400];
+alignEvents = alignEventTimeWin.keys;
 %% Load all JPSTH pair information
 % load variable: JpsthPairsCellInfo
 jpsthCellPairs = load(jpshPairsFile);
@@ -76,12 +79,12 @@ availConditions = regexp(trialTypes.Properties.VariableNames,'(Accurate.+)|(Fast
 availConditions = [availConditions{:}]';
 
 %% Group by singleton location in RF fo X and Y cell
-rfLocNames = {'inXandY','inXnotY','inYnotX','notInXorY'};
+rfLocNames = {'TargetInXandY','TargetInXnotY','TargetInYnotX','TargetNotInXorY'};
 fx_groupRFs = @(xRF,yRF) deal(xRF, yRF, intersect(xRF,yRF), setdiff(xRF,yRF),...
                 setdiff(yRF,xRF), setdiff(0:7,[xRF(:);yRF(:)]));
-[rfLocs.xRF,rfLocs.yRF,rfLocs.(rfLocNames{1}),rfLocs.(rfLocNames{2}),rfLocs.(rfLocNames{3}),rfLocs.(rfLocNames{4})] = ...
+[temp.xRF,temp.yRF,temp.(rfLocNames{1}),temp.(rfLocNames{2}),temp.(rfLocNames{3}),temp.(rfLocNames{4})] = ...
     cellfun(@(xRF,yRF) fx_groupRFs(xRF,yRF), jpsthCellPairs.X_RF, jpsthCellPairs.Y_RF,'UniformOutput',false);
-rfLocs = struct2table(rfLocs);
+rfLocsGroups = struct2table(temp); clear temp;
 %% For each grouped cell pairs by session dir JPSTHs for every pair
 for s = 1:numel(rowIdsOfPairsBySession)
     rowIdsForPairs = rowIdsOfPairsBySession{s};
@@ -91,11 +94,11 @@ for s = 1:numel(rowIdsOfPairsBySession)
     [~,sessionName] = fileparts(file2load);
     sessionTrialEventTimes = trialEventTimes(s,:);
     sessionTrialTypes = trialTypes(s,:);
-    sessionRfLocs = rfLocs(rowIdsForPairs,:);
+    sessionRfLocs = rfLocsGroups(rowIdsForPairs,:);
     fprintf('\nDoing JPSTH for session [%s].......\n',sessionName);
     % for each pair of cells
-    tempConditions = struct();
     for pair = 1:nPairs
+        tempConditions = struct();
         currPair = pairsTodo(pair,:);
         XCellId = currPair.X_cellIdInFile{1};
         YCellId = currPair.Y_cellIdInFile{1};
@@ -104,17 +107,56 @@ for s = 1:numel(rowIdsOfPairsBySession)
             YCellId,currPair.Y_area{1}},'_'));
         fprintf('Processing Pair : %s...\n',pairFilename);
         units = load(file2load,XCellId,YCellId);
+        % for each named singleton location
         for rf = 1:numel(rfLocNames)
             rfLocName = rfLocNames{rf};
             rfLocs = sessionRfLocs.(rfLocName){pair};
-            if isempty(rfLocs) || isnan(rfLocs)
+            if isempty(rfLocs) || any(isnan(rfLocs))
                 tempConditions.(rfLocName) = [];
             else
-                
-            end
-            
-        end
+                % for each condition (outcome)
+                for cond = 1:numel(availConditions)                    
+                    condition = availConditions{cond};
+                    % Get trial Nos for rfLoc and condition
+                    selTrials = find(sessionTrialTypes.(condition){:} & ismember(sessionTrialTypes.SingletonLoc{:},rfLocs));                    
+                    if isempty(selTrials)
+                        tempConditions.(rfLocName).(condition) = [];
+                        continue;
+                    end
+                    % for each aligned event
+                    for evId = 1:numel(alignEvents)
+                        alignedEvent = alignEvents{evId};
+                        alignedTimeWin = alignEventTimeWin(alignedEvent);
+                        alignTime = sessionTrialEventTimes.CueOn{1};
+                        if isempty(strcmpi(alignedEvent,'CueOn'))
+                            alignTime = alignTime + sessionTrialEventTimes.(alignedEvent){1};
+                        end
+                        alignTime = alignTime(selTrials);
+                        XAligned = SpikeUtils.alignSpikeTimes(units.(XCellId)(selTrials,:),alignTime, alignedTimeWin);
+                        YAligned = SpikeUtils.alignSpikeTimes(units.(YCellId)(selTrials,:),alignTime, alignedTimeWin);
+                        temp = SpikeUtils.jpsth(XAligned, YAligned, alignedTimeWin, binWidth, coincidenceBins);
+                        tempJpsth(evId,:) = struct2table(temp,'AsArray',true);
+                        %jer = SpikeUtils.jeromiahJpsth(XAligned, YAligned, alignedTimeWin, binWidth, coincidenceBins);
+                        opts(evId,1).xCellSpikeTimes = {XAligned}; %#ok<*AGROW>
+                        opts(evId,1).yCellSpikeTimes = {YAligned};
+                        opts(evId,1).trialNosByCondition = {selTrials};
+                        opts(evId,1).alignedEvent = {alignedEvent};
+                        opts(evId,1).alignedTimeWin = {alignedTimeWin};
+                        opts(evId,1).alignTime = {alignTime};
+                        opts(evId,1).binWidth = binWidth;
+                        opts(evId,1).coincidenceBins = coincidenceBins;                       
+                    end % for alignEvents
+                    tempJpsth.Properties.RowNames = alignEvents;
+                    tempConditions.(rfLocName).(condition) = [tempJpsth struct2table(opts,'AsArray',true)];                    
+                end % for conditions
+            end   
+        end % for rfLocNames
         % Save for the current pair
+        tempConditions.cellPairInfo = currPair;
+        tempConditions.singletonLocs = sessionRfLocs;
+        oFn = fullfile(jpsthResultsDir,[pairFilename '.mat']);
+        fprintf('Saving processed pair : %s\n',oFn);
+        save(oFn,'-v7.3','-struct','tempConditions');
     end
 end
 
