@@ -40,7 +40,7 @@ function jpsthProcessByCondition()
     % TrialTypes
     trialTypes = load(trialTypesFile);
     trialTypes = trialTypes.TrialTypesDB;
-    %retain only sesisons which have jpsth pairs
+    % retain only sesisons which have jpsth pairs
     trialTypes = trialTypes(cellfun(@(x) find(strcmpi(trialTypes.session, x)),sessions),:);
     % (Accurate|Fast)*(Correct|ErrorHold|ErrorChoice|ErrorTiming|ErrorNoSaccade)
     availConditions = regexp(trialTypes.Properties.VariableNames,'(Accurate.+)|(Fast.+)','match');
