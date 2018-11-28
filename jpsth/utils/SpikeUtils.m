@@ -141,6 +141,25 @@ classdef SpikeUtils
             outArg.rasterBins = min(timeWin):max(timeWin);
         end
         
+        function outArg = isiCvFromRasters(rasterMat)
+            %ISICVFROMRASTERS compute ISI distribution and Cv (by trials)
+            %   rasterMat: rows are trials, columns are binCounts [0 or 1]
+            %             bins are assumed to 1ms apart
+            cellSpiketimesRel = cellfun(@(x) find(x>0),num2cell(rasterMat,2),'UniformOutput',false);
+            outArg = SpikeUtils.isiCv(cellSpiketimesRel);
+        end
+                
+        function outArg = isiCv(cellSpiketimes)
+            %SPIKETIMESCELLARRAY compute ISI distribution and Cv (by trials)
+            %   cellSpikeTimes : Cell array of doubles. The cell array must
+            %   be {nTrials x 1}. Each element in the cell array is a
+            %   column vector (nTimeStamps x 1) of timestamps
+            trialIsi = cellfun(@diff,cellSpiketimes,'UniformOutput',false);
+            outArg.trialCv = cellfun(@(x) std(x)/mean(x),trialIsi);
+            temp = cell2mat(trialIsi');
+            [outArg.isiDistrib,outArg.isi] = hist(temp,0:max(temp));
+        end
+        
         function outArg = psth(cellSpikeTimes,binWidth,timeWin)
             %PSTH Compute PSTH, PSTH-SD, PSTH-VAR for given spike times.
             %   cellSpikeTimes : Cell array of doubles (aligned spikeTimes).  The
@@ -154,7 +173,7 @@ classdef SpikeUtils
             binCenters = min(timeWin):binWidth:max(timeWin);
             outArg.psthBins = min(timeWin):binWidth:max(timeWin);
             outArg.spikeCounts = cell2mat(cellfun(@(x) hist(x,binCenters),...
-                cellSpikeTimes,'UniformOutput',false));            
+                cellSpikeTimes,'UniformOutput',false));
             outArg.psth = mean(outArg.spikeCounts);
             outArg.psthStd = std(outArg.spikeCounts);
             outArg.psthVar = var(outArg.spikeCounts);

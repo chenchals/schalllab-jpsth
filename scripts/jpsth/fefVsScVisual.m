@@ -17,15 +17,15 @@
 %-----------------------------------
 %    
 %% Options for JPSTH computation
-binWidth = 5;
+binWidth = 1;% use 1 ms for JPSTH computation
 % -25 to +25 ms
-coincidenceBins = 5;
+coincidenceBins = 25;
 area1 = 'FEF';
 area2 = 'SC';
 
 rootDataDir = '/Volumes/schalllab/data';
 rootAnalysisDir = '/Volumes/schalllab/Users/Chenchal/JPSTH';
-jpsthResultsDir = fullfile(rootAnalysisDir,['FEF_SC_Visual' num2str(binWidth,'_%dB')]);
+jpsthResultsDir = fullfile(rootAnalysisDir,['FEF_SC_Visual' num2str(binWidth,'_%dms')]);
 if ~exist(jpsthResultsDir, 'dir')
     mkdir(jpsthResultsDir);
 end
@@ -37,9 +37,9 @@ trialEventTimesFile = fullfile(rootAnalysisDir,'TrialEventTimesDB.mat');
 % Setup time windows for different event time alignment, the field names
 % SHALL correspond to column names for trialEventTimes below.
 alignEventTimeWin = containers.Map;
-alignEventTimeWin('CueOn') = [-700 400];
+alignEventTimeWin('CueOn') = [-200 400];
 alignEventTimeWin('SaccadePrimary') = [-300 300];
-alignEventTimeWin('RewardOn') = [-400 400];
+alignEventTimeWin('RewardOn') = [-300 300];
 alignEvents = alignEventTimeWin.keys;
 %% Load all JPSTH pair information
 % load variable: JpsthPairsCellInfo
@@ -153,7 +153,8 @@ for s = 1:numel(rowIdsOfPairsBySession)
         end % for rfLocNames
         % Save for the current pair
         tempConditions.cellPairInfo = currPair;
-        tempConditions.singletonLocs = sessionRfLocs;
+        tempConditions.singletonLocs = sessionRfLocs(pair,:);
+        tempConditions.GithubRef = 'git clone --branch JPSTH_FEFxSC_V1 https://github.com/chenchals/schalllab-jpsth.git';
         oFn = fullfile(jpsthResultsDir,[pairFilename '.mat']);
         fprintf('Saving processed pair : %s\n',oFn);
         save(oFn,'-v7.3','-struct','tempConditions');
