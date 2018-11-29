@@ -1,3 +1,8 @@
+% draw jpsth fig
+
+
+
+
 % input is spiketimes or binned spike times
 %figDir = '/Volumes/schalllab/Users/Chenchal/JPSTH/FigsBinWidth_5/PAIR_0226_E20130829001-RH_SEARCH_DSP16a_SEF_DSP17a_SC.mat';%
 figDir = '/Volumes/schalllab/Users/Chenchal/JPSTH/FigsBinWidth_5';%
