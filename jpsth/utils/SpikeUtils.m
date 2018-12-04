@@ -191,12 +191,14 @@ classdef SpikeUtils
                 -abs(lagBins):abs(lagBins))]';
         end
         
-        function outArg = jpsthCoincidenceHist(jpsth, lagBins)
-            %JPSTHCOINCIDENCEHIST Summary of this method goes here
-            %   Detailed explanation goes here
-            % Function handle for psth
-            %fx_coinh = @getCoincidence;
-            outArg = SpikeUtils.getCoincidence_(jpsth,lagBins);
+        function [outArg, jpsth] = jpsthCoincidenceHist(jpsth, lagBins)
+            %JPSTHCOINCIDENCEHIST Extract diagnols and find mean
+            % 
+            % Create mask for upper and lower triangular matrix
+            % above and below lagBins
+            mask = tril(jpsth, lagBins) & triu(jpsth, -lagBins);
+            jpsth(~mask) = NaN;
+            outArg = nansum(jpsth,1);
         end
         
         function outputArg = getPsthFuns()
