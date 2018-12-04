@@ -1,39 +1,78 @@
 
 % 4 jpsths figure
-%| fastCorrect | accurateCorrect|
-%|-------------|----------------|
-%| inBoth(2,1) | inBoth(2,2)    |
-%|-------------|----------------|
-%| outBoth(1,1)| outBoth(1,2)   |
-%|------------------------------|
+%|             | fastCorrect | accurateCorrect|
+%|-------------|-------------|----------------|
+%| targetLoc#1 |     1,1     |      1,2       |
+%|-------------|-------------|----------------|
+%| targetLoc#2 |     2,1     |      2,2       |
+%|---------------------------|----------------|
 
-% collect plots:
+% datafile ='/Volumes/schalllab/Users/Chenchal/JPSTH/FEF_SC_Visual_1ms/PAIR_0077_D20130828001-RH_SEARCH_DSP12a_FEF_DSP17a_SC.mat';
+% temp = load(datafile);
+% collect data and labels:
+targetLocs= {'TargetInXandY' 'TargetInXnotY'};
+conditions = {'AccurateCorrect' 'FastCorrect'};
+alignedOn = 'CueOn';
 
-jpsths{1} = Z.TargetNotInXorY.FastCorrect('CueOn',:);
-jpsths{2} = Z.TargetNotInXorY.AccurateCorrect('CueOn',:);
-jpsths{3} =Z.TargetInXandY.FastCorrect('CueOn',:);
-jpsths{4} = Z.TargetInXandY.AccurateCorrect('CueOn',:);
-% axes w,h
+nJpsths = 0;
+for r=1:2
+    for c=1:2
+        nJpsths = nJpsths + 1;
+        jpsthLabels{nJpsths} = join({targetLocs{r},conditions{c}},'-');
+        jpsths{nJpsths} = temp.(targetLocs{r}).(conditions{c})(alignedOn,:);
+    end
+end
+jpsths = jpsths(end:-1:1);
+jpsthLabels = jpsthLabels(end:-1:1);
+cellPairInfo = temp.cellPairInfo;
+singletonLocs = temp.singletonLocs;
+%clear temp;
 
-% Plot on normalized axes
-coinsXoffset = 1;
+%% Compute positions of JPSTH image on normalized axes, in arbitarary units
+coinsXoffset = 3;
 boxcarFilt = 5; 
-% JPSTH position - compute other plot pos based on this position
-jpsthPos{1} = [40 40 80 80];
-jpsthPos{2} = [40 210 80 80];
-jpsthPos{3} = [290 40 80 80];
-jpsthPos{4} = [290 210 80 80];
-% Coincidence Hist plots 
-coinsPos = cellfun(@(x) [x(1)+coinsXoffset+x(3) x(2) x(3) x(4)],jpsthPos,'UniformOutput',false);
-% XCell PSTH plots
-psthHeight = 30;
-xHist1Offset = 1;
-% below jpsth
-xPsthPos1 = cellfun(@(x) [x(1) x(2)-psthHeight-xHist1Offset x(3) psthHeight],jpsthPos,'UniformOutput',false);
-% below coincidence hist
-xPsthPos2 = cellfun(@(x) [x(1)+x(3)+coinsXoffset x(2)-psthHeight-xHist1Offset x(3) psthHeight],jpsthPos,'UniformOutput',false);
+allPlotsShiftX = 20;
+allPlotsShiftY = -10;
 
-% use JPSTH pos to add other plots
+%% JPSTH position - compute other plot pos based on this position
+jpsthWH = 100;
+% from bottom col1, row1
+jpsthPos2{1} = [40+allPlotsShiftX 60+allPlotsShiftY jpsthWH jpsthWH];
+% from bottom col1, row2
+jpsthPos2{2} = [jpsthPos2{1}(1) jpsthPos2{1}(2)+2*jpsthWH jpsthWH jpsthWH];
+% from bottom col2, row1
+jpsthPos2{3} = [jpsthPos2{1}(1)+3*jpsthWH jpsthPos2{1}(2) jpsthWH jpsthWH];
+% from bottom col2, row2
+jpsthPos2{4} = [jpsthPos2{1}(1)+3*jpsthWH jpsthPos2{1}(2)+2*jpsthWH jpsthWH jpsthWH];
+
+%% Coincidence Histogram plots 
+% rotated and aligned to bottom of jpsth and to the right. The rorated plot
+% is zoomed to sqrt(2) so that the physical length of the diagonal
+% corresponds to the x-axis lims.
+coinsPos = cellfun(@(x) [x(1)+coinsXoffset+x(3) x(2) x(3) x(4)],jpsthPos,'UniformOutput',false);
+
+%% XCell PSTH plots
+psthHeight = 30;
+psthOffset = 3;
+% below jpsth
+xPsthPos1 = cellfun(@(x) [x(1) x(2)-psthHeight-psthOffset x(3) psthHeight],jpsthPos,'UniformOutput',false);
+% below coincidence hist
+xPsthPos2 = cellfun(@(x) [x(1)+x(3)+coinsXoffset x(2)-psthHeight-psthOffset x(3) psthHeight],jpsthPos,'UniformOutput',false);
+
+%% YCell PSTH plots
+% Left of jpsth
+yPsthPos = cellfun(@(x) [x(1)-psthHeight-psthOffset x(2) psthHeight x(4)],jpsthPos,'UniformOutput',false);
+
+%% CrossCorrelation Histogram plots
+% rotated and centered at right-top vertex fo coincidence histogram
+% plot clipped to half of x-axis data ie if JPSTH is [-300 300] --> then
+% crosscorr is clipped to [-150 150], as the polt is not zoomed to sqrt(2)
+% after rotation, so the physical length of the diagonal corresponds to half the x-axis 
+xcorrNudge = hypot(coinsXoffset,psthOffset)/2 ;
+xcorrOffset = 5+xcorrNudge;
+xcorrsPos = cellfun(@(x) [xcorrOffset+xcorrNudge+x(1)+x(4)*1.5 xcorrOffset-xcorrNudge+x(2)+x(3)*0.5 x(3) x(4)],jpsthPos,'UniformOutput',false);
+
+%% Draw new Figure
 delete(allchild(0))
 figureName='JPSTH Analyses';
 
@@ -65,11 +104,14 @@ H_Figure=figure('Position',figurePos,...
 
 set(H_Figure,'Units','normalized');
 figPos = get(H_Figure,'Position');
-
+% Scale the arbitarary units of position on to normalized axes
+% assume 0-1 x axis correponds to 1000 Units
 sW = 1000/fW;
 sH = 1000/fH;
 fx_getPos = @(p) [p(1)*sW p(2)*sH p(3)*sW p(4)*sH].*1/400;
 grayCol = [0.6 0.6 0.6];
+fastCol = [0 1 0];
+accurateCol = [1 0 0];
 
 % JPSTHs
 jpsthMinMax = cell2mat(cellfun(@(x) minmax(x.normalizedJpsth{1}(:)'),jpsths,'UniformOutput',false));
@@ -80,15 +122,19 @@ jpsthMinMax = round(jpsthMinMax.*10)./10;
 coinsMinMax = cell2mat(cellfun(@(x) minmax(x.coincidenceHist{1}(:,2))',jpsths,'UniformOutput',false));
 coinsMinMax = minmax(coinsMinMax(:)');
 coinsAbsMax = max(abs(coinsMinMax));
-coinsYlim = [-coinsAbsMax coinsAbsMax].*1/sqrt(2);
+coinsYlim = [-coinsAbsMax coinsAbsMax].*sqrt(2);
 coinsXlim = minmax(jpsths{1}.coincidenceHist{1}(:,1)');
 
 % XCorrelations
+crossScaleY = 2;
+% Rotating by 45 deg, reduces the physical viewable x axis to half when aligned on non-rotated plotbox
+% so change xLim to half the data centerd at 0
+crossScaleX = 0.5; 
 crossMinMax = cell2mat(cellfun(@(x) minmax(x.xCorrHist{1}(:,2)'),jpsths,'UniformOutput',false));
 crossMinMax = minmax(crossMinMax(:)');
 crossAbsMax = max(abs(crossMinMax));
-crossYlim = [-crossAbsMax crossAbsMax];
-crossXlim = minmax(jpsths{1}.xCorrHist{1}(:,1)');
+crossYlim = [-crossAbsMax crossAbsMax].*crossScaleY;
+crossXlim = minmax(jpsths{1}.xCorrHist{1}(:,1)').*crossScaleX;
 
 % XCell PSTH
 xCellFrMax = cell2mat(cellfun(@(x) max(x.xPsth{1}),jpsths,'UniformOutput',false)');
@@ -98,82 +144,68 @@ yCellFrMax = cell2mat(cellfun(@(x) max(x.yPsth{1}),jpsths,'UniformOutput',false)
 psthXlim = minmax(jpsths{1}.xPsthBins{1});
 
 for ii = 1:4
-    % jpsth
+    label = jpsthLabels{ii};
+    if contains(label,'Fast')
+        histColor = fastCol;
+        coinsColor = fastCol;
+    elseif contains(label,'Accurate')
+        histColor = accurateCol;
+        coinsColor = accurateCol;
+    else
+        histColor = grayCol;
+        coinsColor = grayCol;
+    end
+    
+    %% JPSTH
     pos = fx_getPos(jpsthPos{ii});
     H_jpsth(ii) = axes(H_Figure,'Position',pos,'Box','on');
     imagesc(flipud(jpsths{ii}.normalizedJpsth{1}),jpsthMinMax);
     set(H_jpsth(ii),'XTick',[],'XTickLabel',[],'YTick',[],'YTickLabel',[]);
-    %axis square
-    % coins
-    pos = fx_getPos(jpsthPos{ii});
+    %% Coincidence Histogram
+    pos = fx_getPos(coinsPos{ii});
     H_coins(ii) = axes(H_Figure,'Position',pos,'Box','off');
     set(bar(jpsths{ii}.coincidenceHist{1}(:,1),smooth(jpsths{ii}.coincidenceHist{1}(:,2)),boxcarFilt),...
-        'Facecolor',grayCol,'edgecolor','none');
+        'Facecolor',coinsColor,'FaceAlpha', 0.2,'edgecolor','none');
     line(coinsXlim,[0 0],'color','k')
     set(H_coins(ii),'XLim',coinsXlim,'YLim',coinsYlim,'Box', 'off');
-    %axis square
     axis off
     camzoom(sqrt(2));
     camorbit(-45,0);
-    set(H_coins(ii),'Position', fx_getPos(coinsPos{ii}));
-    % xcorr
+    %% XCell PSTH
     % xpsth1
     pos = fx_getPos(xPsthPos1{ii});
     H_xpsth1(ii) = axes(H_Figure,'Position',pos,'Box','on');
-
     set(bar(jpsths{ii}.xPsthBins{1},smooth(jpsths{ii}.xPsth{1}),boxcarFilt),...
-        'Facecolor',grayCol,'edgecolor','none');
+        'Facecolor',histColor,'FaceAlpha', 0.2,'edgecolor','none');
     set(H_xpsth1(ii),'YDir','Reverse');   
     % xpsth2
     pos = fx_getPos(xPsthPos2{ii});
     H_xpsth2(ii) = axes(H_Figure,'Position',pos,'Box','on');
-    %axis square
     set(bar(jpsths{ii}.xPsthBins{1},smooth(jpsths{ii}.xPsth{1}),boxcarFilt),...
-        'Facecolor',grayCol,'edgecolor','none');
+        'Facecolor',histColor,'FaceAlpha', 0.2,'edgecolor','none');
     set(H_xpsth2(ii),'YDir','Reverse');
-    
-    drawnow
+    %% YCell PSTH
+    pos = fx_getPos(yPsthPos{ii});
+    H_ypsth1(ii) = axes(H_Figure,'Position',pos,'Box','on');
+    set(bar(jpsths{ii}.yPsthBins{1},smooth(jpsths{ii}.yPsth{1}),boxcarFilt),...
+        'Facecolor',histColor,'FaceAlpha', 0.2,'edgecolor','none');
+    set(H_ypsth1(ii),'YDir','Reverse'); 
+    view([90 -90])
+    %% Cross Correlation Histogram
+    pos = fx_getPos(jpsthPos{ii});
+    H_corrs(ii) = axes(H_Figure,'Position',pos,'Box','off');
+    set(bar(jpsths{ii}.xCorrHist{1}(:,1),smooth(jpsths{ii}.xCorrHist{1}(:,2)),boxcarFilt),...
+        'Facecolor',grayCol,'edgecolor','none');
+    line(crossXlim,[0 0],'color','k')
+    line([0 0],[0 crossAbsMax],'color','k')
+    set(H_corrs(ii),'XLim',crossXlim,'YLim',crossYlim,'Box', 'off');
+        axis off
+    %camzoom(sqrt(2));
+    camorbit(45,0);
+    set(H_corrs(ii),'Position',fx_getPos(xcorrsPos{ii}));
+     
+     
+   drawnow
 
 end
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-% for ii = 1:4
-%     pos = fx_getPos(jpsthPos{ii});
-%     H_jpsth(ii) = axes(H_Figure,'Position',pos,'Box','on');
-%     imagesc(flipud(jpsths{ii}.normalizedJpsth{1}),jpsthMinMax);
-%     set(H_jpsth(ii),'XTick',[],'XTickLabel',[],'YTick',[],'YTickLabel',[]);
-%     axis square
-% end
-% 
-% 
-% for ii = 1:4
-%     pos = fx_getPos(coinsPos{ii});
-%     H_coins(ii) = axes(H_Figure,'Position',pos,'Box','off');
-%     set(bar(jpsths{ii}.coincidenceHist{1}(:,1),smooth(jpsths{ii}.coincidenceHist{1}(:,2)),boxcarFilt),...
-%         'Facecolor',[0.7 0.7 0.7],'edgecolor','none');
-%     line(coinsXlim,[0 0],'color','k')
-%     set(H_coins(ii),'XLim',coinsXlim,'YLim',coinsYlim,'Box', 'off');
-%    axis off
-%     camzoom(sqrt(2));
-%    camorbit(-45,0)
-% end
-%     
-    
-    
-    
-    
-
-%end
