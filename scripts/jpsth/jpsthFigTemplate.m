@@ -1,4 +1,4 @@
-
+function [plotHandles] = jpsthFigTemplate(datafile,targetLocs,conditions,alignedOn)
 % 4 jpsths figure
 %|             | fastCorrect | accurateCorrect|
 %|-------------|-------------|----------------|
@@ -8,15 +8,16 @@
 %|---------------------------|----------------|
 
 % datafile ='/Volumes/schalllab/Users/Chenchal/JPSTH/FEF_SC_Visual_1ms/PAIR_0077_D20130828001-RH_SEARCH_DSP12a_FEF_DSP17a_SC.mat';
-% temp = load(datafile);
-% collect data and labels:
-targetLocs= {'TargetInXandY' 'TargetInXnotY'};
-conditions = {'AccurateCorrect' 'FastCorrect'};
-alignedOn = 'CueOn';
 
+% collect data and labels:
+%targetLocs= {'TargetInXandY' 'TargetInXnotY'};
+%conditions = {'AccurateCorrect' 'FastCorrect'};
+%alignedOn = 'CueOn';
+
+temp = load(datafile);
 nJpsths = 0;
-for r=1:2
-    for c=1:2
+for c=1:2
+    for r=1:2
         nJpsths = nJpsths + 1;
         jpsthLabels{nJpsths} = join({targetLocs{r},conditions{c}},'-');
         jpsths{nJpsths} = temp.(targetLocs{r}).(conditions{c})(alignedOn,:);
@@ -26,7 +27,7 @@ jpsths = jpsths(end:-1:1);
 jpsthLabels = jpsthLabels(end:-1:1);
 cellPairInfo = temp.cellPairInfo;
 singletonLocs = temp.singletonLocs;
-%clear temp;
+clear temp;
 
 %% Compute positions of JPSTH image on normalized axes, in arbitarary units
 coinsXoffset = 3;
@@ -37,13 +38,13 @@ allPlotsShiftY = -10;
 %% JPSTH position - compute other plot pos based on this position
 jpsthWH = 100;
 % from bottom col1, row1
-jpsthPos2{1} = [40+allPlotsShiftX 60+allPlotsShiftY jpsthWH jpsthWH];
+jpsthPos{1} = [40+allPlotsShiftX 60+allPlotsShiftY jpsthWH jpsthWH];
 % from bottom col1, row2
-jpsthPos2{2} = [jpsthPos2{1}(1) jpsthPos2{1}(2)+2*jpsthWH jpsthWH jpsthWH];
+jpsthPos{2} = [jpsthPos{1}(1) jpsthPos{1}(2)+2*jpsthWH jpsthWH jpsthWH];
 % from bottom col2, row1
-jpsthPos2{3} = [jpsthPos2{1}(1)+3*jpsthWH jpsthPos2{1}(2) jpsthWH jpsthWH];
+jpsthPos{3} = [jpsthPos{1}(1)+3*jpsthWH jpsthPos{1}(2) jpsthWH jpsthWH];
 % from bottom col2, row2
-jpsthPos2{4} = [jpsthPos2{1}(1)+3*jpsthWH jpsthPos2{1}(2)+2*jpsthWH jpsthWH jpsthWH];
+jpsthPos{4} = [jpsthPos{1}(1)+3*jpsthWH jpsthPos{1}(2)+2*jpsthWH jpsthWH jpsthWH];
 
 %% Coincidence Histogram plots 
 % rotated and aligned to bottom of jpsth and to the right. The rorated plot
@@ -208,4 +209,11 @@ for ii = 1:4
    drawnow
 
 end
-
+vars = who;
+vars= vars(contains(vars,'H_'));
+for ii = 1:numel(vars)  
+    if ishandle(eval(vars{ii}))
+        plotHandles.(vars{ii}) = eval(vars{ii});
+    end
+end
+end
