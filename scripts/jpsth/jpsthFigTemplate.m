@@ -1,4 +1,5 @@
-function [plotHandles] = jpsthFigTemplate(datafile,targetLocs,conditions,alignedOn)
+function [plotHandles] = jpsthFigTemplate(varargin)
+%function [plotHandles] = jpsthFigTemplate(datafile,targetLocs,conditions,alignedOn)
 % 4 jpsths figure
 %|             | fastCorrect | accurateCorrect|
 %|-------------|-------------|----------------|
@@ -7,12 +8,11 @@ function [plotHandles] = jpsthFigTemplate(datafile,targetLocs,conditions,aligned
 %| targetLoc#2 |     2,1     |      2,2       |
 %|---------------------------|----------------|
 
-% datafile ='/Volumes/schalllab/Users/Chenchal/JPSTH/FEF_SC_Visual_1ms/PAIR_0077_D20130828001-RH_SEARCH_DSP12a_FEF_DSP17a_SC.mat';
-
+datafile ='/Volumes/schalllab/Users/Chenchal/JPSTH/FEF_SC_Visual_1ms/PAIR_0077_D20130828001-RH_SEARCH_DSP12a_FEF_DSP17a_SC.mat';
 % collect data and labels:
-%targetLocs= {'TargetInXandY' 'TargetInXnotY'};
-%conditions = {'AccurateCorrect' 'FastCorrect'};
-%alignedOn = 'CueOn';
+targetLocs= {'TargetInXandY' 'TargetInXnotY'};
+conditions = {'AccurateCorrect' 'FastCorrect'};
+alignedOn = 'CueOn';
 
 temp = load(datafile);
 nJpsths = 0;
@@ -137,12 +137,13 @@ crossAbsMax = max(abs(crossMinMax));
 crossYlim = [-crossAbsMax crossAbsMax].*crossScaleY;
 crossXlim = minmax(jpsths{1}.xCorrHist{1}(:,1)').*crossScaleX;
 
+frFactor = 1000/jpsths{1}.binWidth;
 % XCell PSTH
-xCellFrMax = cell2mat(cellfun(@(x) max(x.xPsth{1}),jpsths,'UniformOutput',false)');
+xCellFrMax = cellfun(@(x) max(x.xPsth{1}),jpsths,'UniformOutput',false)';
 % YCell PSTH
-yCellFrMax = cell2mat(cellfun(@(x) max(x.yPsth{1}),jpsths,'UniformOutput',false)');
+yCellFrMax = cellfun(@(x) max(x.yPsth{1}),jpsths,'UniformOutput',false)';
 % All PSTH xlims
-psthXlim = minmax(jpsths{1}.xPsthBins{1});
+psthLim = minmax(jpsths{1}.xPsthBins{1});
 
 for ii = 1:4
     label = jpsthLabels{ii};
@@ -159,12 +160,12 @@ for ii = 1:4
     
     %% JPSTH
     pos = fx_getPos(jpsthPos{ii});
-    H_jpsth(ii) = axes(H_Figure,'Position',pos,'Box','on');
+    H_jpsth(ii) = axes(H_Figure,'Position',pos,'Box','on','Tag','H_Figure');
     imagesc(flipud(jpsths{ii}.normalizedJpsth{1}),jpsthMinMax);
     set(H_jpsth(ii),'XTick',[],'XTickLabel',[],'YTick',[],'YTickLabel',[]);
     %% Coincidence Histogram
     pos = fx_getPos(coinsPos{ii});
-    H_coins(ii) = axes(H_Figure,'Position',pos,'Box','off');
+    H_coins(ii) = axes(H_Figure,'Position',pos,'Box','off','Tag',['H_coins' num2str(ii,'_%d')]);
     set(bar(jpsths{ii}.coincidenceHist{1}(:,1),smooth(jpsths{ii}.coincidenceHist{1}(:,2)),boxcarFilt),...
         'Facecolor',coinsColor,'FaceAlpha', 0.2,'edgecolor','none');
     line(coinsXlim,[0 0],'color','k')
@@ -175,45 +176,93 @@ for ii = 1:4
     %% XCell PSTH
     % xpsth1
     pos = fx_getPos(xPsthPos1{ii});
-    H_xpsth1(ii) = axes(H_Figure,'Position',pos,'Box','on');
+    H_xpsth1(ii) = axes(H_Figure,'Position',pos,'Box','on','Tag',['H_xpsth1' num2str(ii,'_%d')]);
     set(bar(jpsths{ii}.xPsthBins{1},smooth(jpsths{ii}.xPsth{1}),boxcarFilt),...
         'Facecolor',histColor,'FaceAlpha', 0.2,'edgecolor','none');
-    set(H_xpsth1(ii),'YDir','Reverse');   
+    set(H_xpsth1(ii),'YDir','Reverse'); 
+    set(H_xpsth1(ii),'XLim',psthLim,'YLim',[0 xCellFrMax{ii}]);
     % xpsth2
     pos = fx_getPos(xPsthPos2{ii});
-    H_xpsth2(ii) = axes(H_Figure,'Position',pos,'Box','on');
+    H_xpsth2(ii) = axes(H_Figure,'Position',pos,'Box','on','Tag',['H_xpsth2' num2str(ii,'_%d')]);
     set(bar(jpsths{ii}.xPsthBins{1},smooth(jpsths{ii}.xPsth{1}),boxcarFilt),...
         'Facecolor',histColor,'FaceAlpha', 0.2,'edgecolor','none');
     set(H_xpsth2(ii),'YDir','Reverse');
+    set(H_xpsth2(ii),'XLim',psthLim,'YLim',[0 xCellFrMax{ii}],'YAxisLocation','right');
     %% YCell PSTH
     pos = fx_getPos(yPsthPos{ii});
-    H_ypsth1(ii) = axes(H_Figure,'Position',pos,'Box','on');
+    H_ypsth1(ii) = axes(H_Figure,'Position',pos,'Box','on','Tag',['H_jpsth1' num2str(ii,'_%d')]);
     set(bar(jpsths{ii}.yPsthBins{1},smooth(jpsths{ii}.yPsth{1}),boxcarFilt),...
         'Facecolor',histColor,'FaceAlpha', 0.2,'edgecolor','none');
     set(H_ypsth1(ii),'YDir','Reverse'); 
+    set(H_ypsth1(ii),'XLim',psthLim,'YLim',[0 yCellFrMax{ii}]);
     view([90 -90])
     %% Cross Correlation Histogram
     pos = fx_getPos(jpsthPos{ii});
-    H_corrs(ii) = axes(H_Figure,'Position',pos,'Box','off');
+    H_xcorr(ii) = axes(H_Figure,'Position',pos,'Box','off','Tag',['H_xcorr' num2str(ii,'_%d')]);
     set(bar(jpsths{ii}.xCorrHist{1}(:,1),smooth(jpsths{ii}.xCorrHist{1}(:,2)),boxcarFilt),...
         'Facecolor',grayCol,'edgecolor','none');
     line(crossXlim,[0 0],'color','k')
     line([0 0],[0 crossAbsMax],'color','k')
-    set(H_corrs(ii),'XLim',crossXlim,'YLim',crossYlim,'Box', 'off');
+    set(H_xcorr(ii),'XLim',crossXlim,'YLim',crossYlim,'Box', 'off');
         axis off
     %camzoom(sqrt(2));
     camorbit(45,0);
-    set(H_corrs(ii),'Position',fx_getPos(xcorrsPos{ii}));
-     
-     
+    set(H_xcorr(ii),'Position',fx_getPos(xcorrsPos{ii}));     
    drawnow
-
 end
+
+% Annotate:
+% add plot labels
+addJpsthLabel(jpsthLabels,H_ypsth1);
+annotateYCellPsth(H_ypsth1,frFactor,cellPairInfo);
+annotateXCellPsth(H_xpsth1,frFactor,cellPairInfo);
+annotateXCellPsth(H_xpsth2,frFactor,cellPairInfo);
+
+
 vars = who;
 vars= vars(contains(vars,'H_'));
 for ii = 1:numel(vars)  
     if ishandle(eval(vars{ii}))
         plotHandles.(vars{ii}) = eval(vars{ii});
+    end
+end
+end
+
+function addJpsthLabel(labels,axesHandles)
+  for ii = 1:numel(axesHandles)
+    h=axesHandles(ii);
+    text(h,max(get(h,'XLim'))*1.4,max(get(h,'YLim'))*1.1,labels{ii},...
+        'FontWeight','bold','FontSize',14,'fontAngle','Italic');
+  end
+end
+
+function annotateYCellPsth(axesHandles,frFactor,cellPairInfo)
+  for ii = 1:numel(axesHandles)
+    xLims = get(axesHandles(ii),'XLim');
+    yLims = get(axesHandles(ii),'YLim').*1.01;
+    xTicks = min(xLims):100:max(xLims);
+    yTickLabel = num2str(round(max(yLims)*frFactor),'%d spk/s');
+    set(axesHandles(ii),'XTick',xTicks(2:end-1),'XTickLabelRotation',90,'XGrid','on');    
+    set(axesHandles(ii),'YTick',[]);
+    text(axesHandles(ii),min(xLims),max(yLims)*1.1,yTickLabel,'Rotation',135,...
+        'HorizontalAlignment','center','VerticalAlignment','baseline')
+  end
+end
+
+function annotateXCellPsth(axesHandles,frFactor,cellPairInfo)
+for ii = 1:numel(axesHandles)
+    xLims = get(axesHandles(ii),'XLim');
+    yLims = get(axesHandles(ii),'YLim').*1.01;
+    xTicks = min(xLims):100:max(xLims);
+    yTickLabel = num2str(round(max(yLims)*frFactor),'%d spk/s');
+    set(axesHandles(ii),'XTick',xTicks(2:end-1),'XTickLabelRotation',90,'XGrid','on');
+    set(axesHandles(ii),'YTick',[]);
+    if strcmpi(get(axesHandles(ii),'YAxisLocation'),'right')
+         text(axesHandles(ii),max(xLims),max(yLims)*1.1,yTickLabel,'Rotation',45,...
+        'HorizontalAlignment','center','VerticalAlignment','baseline')
+    else   
+         text(axesHandles(ii),min(xLims),max(yLims)*1.1,yTickLabel,'Rotation',135,...
+        'HorizontalAlignment','center','VerticalAlignment','baseline')
     end
 end
 end
