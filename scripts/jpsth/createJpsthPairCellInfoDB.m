@@ -16,7 +16,7 @@ cellsGoodVM = db.CellInfoDB(goodVMIdx,:);
 
 uniqMonkSessNo = unique(cellsGoodVM.monkSessNo);
 cellsBySession = arrayfun(@(x) find(contains(cellsGoodVM.monkSessNo,x)), uniqMonkSessNo, 'UniformOutput',false);
-varsForPairs = {'UID','cellIdInFile','depth','area','unitFuncType','RF','MF'};
+varsForPairs = {'UID','cellIdInFile','depth','area','unitFuncType','RF','MF','Isolation','ThomasRF','ThomasMF','ThomasVis','TrialsToRemove','SignifElevatedBaseline'};
 nextPairId = 0;
 JpsthPairCellInfoDB = table();
 
@@ -66,10 +66,21 @@ end
 save(fullfile(inRootAnalysisDir,'JPSTH_PAIRS_CellInfoDB.mat'),'JpsthPairCellInfoDB');
 
 format2f = @(numFormat,cellArrayDouble) regexprep(arrayfun(@(x) num2str(x{1},numFormat),cellArrayDouble,'UniformOutput',false),'^(.*)$','\[$1\]');
+JpsthPairCellInfoDB.X_Isolation=num2str(JpsthPairCellInfoDB.X_Isolation);
+JpsthPairCellInfoDB.Y_Isolation=num2str(JpsthPairCellInfoDB.Y_Isolation);
 JpsthPairCellInfoDB.X_RF=format2f('%d ',JpsthPairCellInfoDB.X_RF);
 JpsthPairCellInfoDB.Y_RF=format2f('%d ',JpsthPairCellInfoDB.Y_RF);
 JpsthPairCellInfoDB.X_MF=format2f('%d ',JpsthPairCellInfoDB.X_MF);
 JpsthPairCellInfoDB.Y_MF=format2f('%d ',JpsthPairCellInfoDB.Y_MF);
+JpsthPairCellInfoDB.X_ThomasRF=format2f('%d ',JpsthPairCellInfoDB.X_ThomasRF);
+JpsthPairCellInfoDB.Y_ThomasRF=format2f('%d ',JpsthPairCellInfoDB.Y_ThomasRF);
+JpsthPairCellInfoDB.X_ThomasMF=format2f('%d ',JpsthPairCellInfoDB.X_ThomasMF);
+JpsthPairCellInfoDB.Y_ThomasMF=format2f('%d ',JpsthPairCellInfoDB.Y_ThomasMF);
+JpsthPairCellInfoDB.X_ThomasVis=num2str(JpsthPairCellInfoDB.X_ThomasVis);
+JpsthPairCellInfoDB.Y_ThomasVis=num2str(JpsthPairCellInfoDB.Y_ThomasVis);
+JpsthPairCellInfoDB.X_TrialsToRemove=format2f('%d ',JpsthPairCellInfoDB.X_TrialsToRemove);
+JpsthPairCellInfoDB.Y_TrialsToRemove=format2f('%d ',JpsthPairCellInfoDB.Y_TrialsToRemove);
+
 JpsthPairCellInfoDB.X_visMovFix=format2f('%.2f ',JpsthPairCellInfoDB.X_visMovFix);
 JpsthPairCellInfoDB.Y_visMovFix=format2f('%.2f ',JpsthPairCellInfoDB.Y_visMovFix);
 
