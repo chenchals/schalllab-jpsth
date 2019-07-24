@@ -1,4 +1,4 @@
-function [outVar, jpsthTable] = newJpsth(alignedSpkTimes,unitNames,timeWindow,binWidth,coinBins)
+function [outVar, jpsthTable] = newJpsth_(alignedSpkTimes,unitNames,timeWindow,binWidth,coinBins)
 %NEWJPSTH Compute rasters, psth, normalizedJPSTH, xCorrHistogram, coincidenceHistogram
 %   alignedSpkTimes: Cell array of {nTrials, kCells} - Aligned spike times of all cells
 %                    Example Data: alignedSpkTimes = SpikeTimes.saccade;
@@ -78,11 +78,14 @@ for i = 1:nPairs
     temp.xCorrHist = fx_xcorrh(temp.normJpsth,floor(numel(timeBins)/2));
     % Coincidence Hist
     temp.coinHist = fx_coinh(temp.normJpsth,coincidenceBins);
+    % change rasters to be logical
+    temp.xRasters = logical(temp.xRasters);
+    temp.yRasters = logical(temp.yRasters);
     % add to output struct
     jpsthTable(i)=temp;    
 end
 toc
-jpsthTable = struct2table(jpsthTable);
+jpsthTable = struct2table(jpsthTable,'AsArray',true);
 outVar.jpsth = jpsthTable;
 % save fx for callin on output
 outVar.smoothFx = @(v,nPoints,sigma) convn(v,...

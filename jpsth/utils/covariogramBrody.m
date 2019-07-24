@@ -75,5 +75,6 @@ function [thisCovariogram, sigHigh, sigLow, parts] = covariogramBrody(spike_1, s
     parts.p1s2 = p1s2;
     parts.s1p2 = s1p2;
     parts.sigma = sigma;
-
+    parts.ij = ij;
+    ij
 end
